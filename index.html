@@ -388,7 +388,7 @@
     let clientsCache = [];
 
     function formatNumber(n) {
-      if (n === null || n === undefined || n === 0) return '-';
+      if (n === null || n === undefined) return '-';
       return n.toLocaleString('ko-KR');
     }
 
@@ -398,11 +398,11 @@
     }
 
     function computeDelta(current, previous) {
-      if (!previous || previous === 0 || current === null) {
+      if (previous === null || previous === undefined || previous === 0 || current === null) {
         return { label: '이전 기간 데이터 없음', cls: 'kpi-delta' };
       }
       const diff = current - previous;
-      const pct = previous === 0 ? 0 : (diff / previous) * 100;
+      const pct = (diff / previous) * 100;
       const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
       const cls =
         diff > 0 ? 'kpi-delta positive' :
@@ -425,37 +425,43 @@
         '<span class="skeleton row"></span>';
     }
 
+    function applyDeviceFilter(query) {
+      if (currentDevice === 'all') return query;
+      return query.eq('device', currentDevice);
+    }
+
     async function loadSummary() {
       if (!currentClientId) return;
 
       const now = new Date();
-      const periodDays = parseInt(currentPeriod);
+      const periodDays = parseInt(currentPeriod, 10);
       const startDate = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
       const prevStartDate = new Date(now.getTime() - (periodDays * 2) * 24 * 60 * 60 * 1000);
       const prevEndDate = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
-      const deviceFilter = currentDevice === 'all' ? '' : `.eq('device', '${currentDevice}')`;
-
-      const { data: recent, error: recentError } = await sb
+      let recentQuery = sb
         .from('metrics_daily_sum')
         .select('sessions,pageviews,bounces,entrances')
         .eq('client_id', currentClientId)
-        ${deviceFilter}
         .gte('date', startDate.toISOString().slice(0,10));
 
+      let prevQuery = sb
+        .from('metrics_daily_sum')
+        .select('sessions,pageviews,bounces,entrances')
+        .eq('client_id', currentClientId)
+        .gte('date', prevStartDate.toISOString().slice(0,10))
+        .lt('date', prevEndDate.toISOString().slice(0,10));
+
+      recentQuery = applyDeviceFilter(recentQuery);
+      prevQuery   = applyDeviceFilter(prevQuery);
+
+      const { data: recent, error: recentError } = await recentQuery;
       if (recentError) {
         console.error('RECENT ERROR:', recentError);
         return;
       }
 
-      const { data: previous, error: previousError } = await sb
-        .from('metrics_daily_sum')
-        .select('sessions,pageviews,bounces,entrances')
-        .eq('client_id', currentClientId)
-        ${deviceFilter}
-        .gte('date', prevStartDate.toISOString().slice(0,10))
-        .lt('date', prevEndDate.toISOString().slice(0,10));
-
+      const { data: previous, error: previousError } = await prevQuery;
       if (previousError) {
         console.error('PREV ERROR:', previousError);
         return;
@@ -464,28 +470,30 @@
       const recentSessions = (recent || []).reduce((s, r) => s + (r.sessions || 0), 0);
       const recentPageviews = (recent || []).reduce((s, r) => s + (r.pageviews || 0), 0);
       const recentBounces = (recent || []).reduce((s, r) => s + (r.bounces || 0), 0);
-      const recentEntrances = (recent || []).reduce((s, r) => s + (r.entrances || 0), 0);
 
       const prevSessions = (previous || []).reduce((s, r) => s + (r.sessions || 0), 0);
       const prevPageviews = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
       const prevBounces = (previous || []).reduce((s, r) => s + (r.bounces || 0), 0);
-      const prevEntrances = (previous || []).reduce((s, r) => s + (r.entrances || 0), 0);
 
-      // Update values
       document.getElementById('sessions-value').textContent = formatNumber(recentSessions);
       document.getElementById('pageviews-value').textContent = formatNumber(recentPageviews);
-      
+
       const bounceRate = recentSessions > 0 ? (recentBounces / recentSessions) * 100 : 0;
       const pagesPerSession = recentSessions > 0 ? recentPageviews / recentSessions : 0;
-      
+
       document.getElementById('bounce-value').textContent = formatPercent(bounceRate);
       document.getElementById('pages-value').textContent = pagesPerSession.toFixed(1);
 
-      // Update deltas
       const sDelta = computeDelta(recentSessions, prevSessions);
       const pDelta = computeDelta(recentPageviews, prevPageviews);
-      const bDelta = computeDelta(bounceRate, prevSessions > 0 ? (prevBounces / prevSessions) * 100 : 0);
-      const pagesDelta = computeDelta(pagesPerSession, prevSessions > 0 ? prevPageviews / prevSessions : 0);
+      const bDelta = computeDelta(
+        bounceRate,
+        prevSessions > 0 ? (prevBounces / prevSessions) * 100 : null
+      );
+      const pagesDelta = computeDelta(
+        pagesPerSession,
+        prevSessions > 0 ? prevPageviews / prevSessions : null
+      );
 
       document.getElementById('sessions-delta').className = sDelta.cls;
       document.getElementById('sessions-delta').textContent = sDelta.label;
@@ -496,35 +504,39 @@
       document.getElementById('pages-delta').className = pagesDelta.cls;
       document.getElementById('pages-delta').textContent = pagesDelta.label;
 
-      document.getElementById('period-label').textContent = 
+      document.getElementById('period-label').textContent =
         periodDays === 1 ? '오늘' : `최근 ${periodDays}일`;
     }
 
     async function loadDailyTable() {
       if (!currentClientId) return;
 
-      const days = parseInt(currentPeriod);
+      const days = parseInt(currentPeriod, 10);
       const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-      const deviceFilter = currentDevice === 'all' ? '' : `.eq('device', '${currentDevice}')`;
-
-      const { data, error } = await sb
+      let query = sb
         .from('metrics_daily_sum')
         .select('date,sessions,pageviews')
         .eq('client_id', currentClientId)
-        ${deviceFilter}
         .gte('date', start.toISOString().slice(0,10))
         .order('date', { ascending: true });
 
+      query = applyDeviceFilter(query);
+
+      const { data, error } = await query;
       const tbody = document.getElementById('daily-body');
 
       if (error) {
-        tbody.innerHTML = '<tr><td colspan="3" style="color:#f97316;">데이터 로드 에러</td></tr>';
+        console.error('DAILY ERROR:', error);
+        tbody.innerHTML =
+          '<tr><td colspan="3" style="color:#f97316;">데이터 로드 에러</td></tr>';
+        document.getElementById('range-label').textContent = 'Error';
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="color:#9ca3af;">선택 기간 데이터가 없습니다.</td></tr>';
+        tbody.innerHTML =
+          '<tr><td colspan="3" style="color:#9ca3af;">선택 기간 데이터가 없습니다.</td></tr>';
         document.getElementById('range-label').textContent = 'No data';
         return;
       }
@@ -554,24 +566,21 @@
       const body = document.getElementById('channels-body');
       body.innerHTML = '<span class="skeleton row"></span>';
 
-      const periodFilter = currentPeriod === '1' ? 
-        `.gte('date', '${new Date().toISOString().slice(0,10)}')` : 
-        `.gte('date', '${new Date(Date.now() - parseInt(currentPeriod) * 24 * 60 * 60 * 1000).toISOString().slice(0,10)}')`;
-
       const { data, error } = await sb
         .from('metrics_channel_7d')
         .select('channel,sessions,pageviews')
         .eq('client_id', currentClientId)
-        ${periodFilter}
         .order('sessions', { ascending: false });
 
       if (error) {
-        body.innerHTML = '<span style="color:#f97316;">채널 데이터 로드 에러</span>';
+        console.error('CHANNELS ERROR:', error);
+        body.innerHTML =
+          '<span style="color:#f97316;">채널 데이터 로드 에러</span>';
         return;
       }
 
       if (!data || data.length === 0) {
-        body.innerHTML = '<span>선택 기간 채널 데이터가 없습니다.</span>';
+        body.innerHTML = '<span>채널 데이터가 없습니다.</span>';
         return;
       }
 
@@ -579,7 +588,7 @@
         return `
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
             <span style="color:#e5e7eb;">${row.channel || '기타'}</span>
-            <span>${formatNumber(row.sessions)}세션</span>
+            <span>${formatNumber(row.sessions)}세션 · ${formatNumber(row.pageviews)}뷰</span>
           </div>
         `;
       }).join('');
@@ -595,6 +604,7 @@
         .order('name', { ascending: true });
 
       if (error) {
+        console.error('CLIENTS ERROR:', error);
         selectEl.innerHTML = '<option value="">Load error</option>';
         return;
       }
