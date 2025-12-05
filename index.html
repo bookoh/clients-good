@@ -2,212 +2,503 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <title>Supabase Test</title>
+  <title>BSBKTV Audience Control Room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+      background: radial-gradient(circle at top, #111827, #020617);
+      color: #e5e7eb;
+    }
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #f97316, #0f172a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .logo-text-main {
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      color: #9ca3af;
+    }
+    .logo-text-sub {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    .timestamp {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #9ca3af;
+      background: linear-gradient(to right, rgba(15,23,42,0.9), rgba(15,23,42,0.6));
+    }
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .card {
+      border-radius: 18px;
+      padding: 16px 14px 14px;
+      background: radial-gradient(circle at top left, rgba(37,99,235,0.26), rgba(15,23,42,0.95));
+      border: 1px solid rgba(148,163,184,0.25);
+      box-shadow: 0 18px 40px rgba(15,23,42,0.75);
+      margin-bottom: 14px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+    .kpi-main {
+      font-size: 22px;
+      font-weight: 600;
+      color: #f9fafb;
+    }
+    .kpi-sub {
+      font-size: 10px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    .kpi-delta {
+      font-size: 10px;
+      color: #9ca3af;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: linear-gradient(to right, rgba(15,23,42,0.2), rgba(15,23,42,0.6));
+    }
+    .kpi-delta.positive {
+      color: #22c55e;
+      border-color: rgba(34,197,94,0.5);
+    }
+    .kpi-delta.negative {
+      color: #f97316;
+      border-color: rgba(249,115,22,0.5);
+    }
+
+    .client-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .client-select {
+      flex: 1;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      color: #e5e7eb;
+      border: 1px solid rgba(148,163,184,0.5);
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .client-url {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    .badge-small {
+      font-size: 9px;
+      border-radius: 999px;
+      padding: 2px 6px;
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(148,163,184,0.4);
+      color: #9ca3af;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    thead {
+      color: #6b7280;
+      border-bottom: 1px solid rgba(55,65,81,0.8);
+    }
+    th, td {
+      padding: 6px 4px;
+      text-align: left;
+    }
+    tbody tr:nth-child(even) {
+      background: rgba(15,23,42,0.6);
+    }
+
+    .skeleton {
+      display: inline-block;
+      min-width: 60px;
+      height: 14px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #020617, #111827, #020617);
+      background-size: 200% 100%;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .skeleton.small {
+      min-width: 80px;
+      height: 10px;
+    }
+    .skeleton.row {
+      display: block;
+      width: 100%;
+      height: 12px;
+    }
+    @keyframes pulse {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    footer {
+      margin-top: 18px;
+      font-size: 9px;
+      color: #4b5563;
+    }
+  </style>
 </head>
 <body>
-  <h1>Clients 테스트</h1>
-  <button id="btn">불러오기</button>
-  <pre id="out"></pre>
+  <div class="page">
+    <header>
+      <div class="logo-row">
+        <div class="logo-circle">BS</div>
+        <div>
+          <div class="logo-text-main">BSBKTV</div>
+          <div class="logo-text-sub">AUDIENCE CONTROL ROOM</div>
+        </div>
+      </div>
+      <div class="timestamp" id="top-date"></div>
+    </header>
 
+    <div style="margin-bottom:18px;">
+      <span class="pill">Realtime client report · Supabase</span>
+    </div>
+
+    <section style="margin-bottom:18px;">
+      <div class="section-title">Client</div>
+      <div class="card" style="background: radial-gradient(circle at top left, rgba(249,115,22,0.3), rgba(15,23,42,0.96));">
+        <div class="client-row">
+          <select id="client-select" class="client-select">
+            <option>Loading…</option>
+          </select>
+          <span class="badge-small">LIVE</span>
+        </div>
+        <div class="client-url" id="client-url"></div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:12px;">
+      <div class="section-title">Sessions</div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Sessions · 최근 7일</div>
+          </div>
+          <span class="badge-small">vs 직전 7일</span>
+        </div>
+        <div>
+          <div class="kpi-main" id="sessions-value"><span class="skeleton"></span></div>
+          <div class="kpi-sub">전체 세션 합계</div>
+          <div style="margin-top:8px;">
+            <span id="sessions-delta" class="kpi-delta"><span class="skeleton small"></span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-bottom:12px;">
+      <div class="section-title">Pageviews</div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Pageviews · 최근 7일</div>
+          </div>
+          <span class="badge-small">vs 직전 7일</span>
+        </div>
+        <div>
+          <div class="kpi-main" id="pageviews-value"><span class="skeleton"></span></div>
+          <div class="kpi-sub">전체 페이지뷰 합계</div>
+          <div style="margin-top:8px;">
+            <span id="pageviews-delta" class="kpi-delta"><span class="skeleton small"></span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">Daily traffic log</div>
+      <div class="card" style="background: radial-gradient(circle at top left, rgba(59,130,246,0.35), rgba(15,23,42,0.96));">
+        <div class="card-header">
+          <div class="card-title">최근 30일 일자별 세션·페이지뷰 기록</div>
+          <span class="badge-small" id="range-label">최근 30일</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>세션</th>
+                <th>페이지뷰</th>
+              </tr>
+            </thead>
+            <tbody id="daily-body">
+              <tr>
+                <td colspan="3"><span class="skeleton row"></span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © 2025 BSBKTV · All rights reserved.  
+      LIVE 데이터는 Supabase Analytics 테이블 기준이며, 내부 검토용입니다.
+    </footer>
+  </div>
+
+  <!-- Supabase + 대시보드 스크립트 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const { createClient } = supabase;
+  <script>
+    const { createClient } = supabase;
 
-  const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
+    const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
 
-  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  document.getElementById('top-date').textContent =
-    new Date().toLocaleString('ko-KR', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit'
-    });
+    document.getElementById('top-date').textContent =
+      new Date().toLocaleString('ko-KR', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
 
-  let currentClientId = null;
-  let clientsCache = [];
+    let currentClientId = null;
+    let clientsCache = [];
 
-  function formatNumber(n) {
-    if (n === null || n === undefined) return '-';
-    return n.toLocaleString('ko-KR');
-  }
-
-  function computeDelta(current, previous) {
-    if (!previous || previous === 0 || current === null) {
-      return { label: '이전 기간 데이터 없음', cls: 'kpi-delta' };
-    }
-    const diff = current - previous;
-    const pct = previous === 0 ? 0 : (diff / previous) * 100;
-    const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
-    const cls =
-      diff > 0 ? 'kpi-delta positive' :
-      diff < 0 ? 'kpi-delta negative' :
-      'kpi-delta';
-    const label = `${sign}${Math.abs(diff)} (${sign}${Math.abs(pct).toFixed(1)}%) vs 직전 7일`;
-    return { label, cls };
-  }
-
-  function setLoadingState() {
-    document.getElementById('sessions-value').innerHTML =
-      '<span class="skeleton"></span>';
-    document.getElementById('pageviews-value').innerHTML =
-      '<span class="skeleton"></span>';
-    document.getElementById('sessions-delta').innerHTML =
-      '<span class="skeleton small"></span>';
-    document.getElementById('pageviews-delta').innerHTML =
-      '<span class="skeleton small"></span>';
-    document.getElementById('daily-body').innerHTML =
-      '<tr><td colspan="3"><span class="skeleton row"></span></td></tr>';
-  }
-
-  async function loadWeeklySummary() {
-    if (!currentClientId) return;
-
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-
-    const { data: recent, error: recentError } = await sb
-      .from('metrics_daily')
-      .select('sessions,pageviews,date')
-      .eq('client_id', currentClientId)
-      .gte('date', sevenDaysAgo.toISOString().slice(0,10));
-
-    if (recentError) {
-      alert('WEEKLY RECENT ERROR: ' + (recentError.message || JSON.stringify(recentError)));
-      return;
+    function formatNumber(n) {
+      if (n === null || n === undefined) return '-';
+      return n.toLocaleString('ko-KR');
     }
 
-    const { data: previous, error: previousError } = await sb
-      .from('metrics_daily')
-      .select('sessions,pageviews,date')
-      .eq('client_id', currentClientId)
-      .gte('date', fourteenDaysAgo.toISOString().slice(0,10))
-      .lt('date', sevenDaysAgo.toISOString().slice(0,10));
-
-    if (previousError) {
-      alert('WEEKLY PREV ERROR: ' + (previousError.message || JSON.stringify(previousError)));
-      return;
+    function computeDelta(current, previous) {
+      if (!previous || previous === 0 || current === null) {
+        return { label: '이전 기간 데이터 없음', cls: 'kpi-delta' };
+      }
+      const diff = current - previous;
+      const pct = previous === 0 ? 0 : (diff / previous) * 100;
+      const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
+      const cls =
+        diff > 0 ? 'kpi-delta positive' :
+        diff < 0 ? 'kpi-delta negative' :
+        'kpi-delta';
+      const label = `${sign}${Math.abs(diff)} (${sign}${Math.abs(pct).toFixed(1)}%) vs 직전 7일`;
+      return { label, cls };
     }
 
-    const recentSessions = (recent || []).reduce((s, r) => s + (r.sessions || 0), 0);
-    const recentPageviews = (recent || []).reduce((s, r) => s + (r.pageviews || 0), 0);
-    const prevSessions = (previous || []).reduce((s, r) => s + (r.sessions || 0), 0);
-    const prevPageviews = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
-
-    const sessionsValueEl = document.getElementById('sessions-value');
-    const pageviewsValueEl = document.getElementById('pageviews-value');
-    const sessionsDeltaEl = document.getElementById('sessions-delta');
-    const pageviewsDeltaEl = document.getElementById('pageviews-delta');
-
-    sessionsValueEl.textContent = formatNumber(recentSessions);
-    pageviewsValueEl.textContent = formatNumber(recentPageviews);
-
-    const sDelta = computeDelta(recentSessions, prevSessions);
-    const pDelta = computeDelta(recentPageviews, prevPageviews);
-
-    sessionsDeltaEl.className = sDelta.cls;
-    sessionsDeltaEl.textContent = sDelta.label;
-    pageviewsDeltaEl.className = pDelta.cls;
-    pageviewsDeltaEl.textContent = pDelta.label;
-  }
-
-  async function loadDailyTable() {
-    if (!currentClientId) return;
-
-    const days = 30;
-    const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-    const { data, error } = await sb
-      .from('metrics_daily')
-      .select('date,sessions,pageviews')
-      .eq('client_id', currentClientId)
-      .gte('date', start.toISOString().slice(0,10))
-      .order('date', { ascending: true });
-
-    const tbody = document.getElementById('daily-body');
-
-    if (error) {
-      alert('DAILY ERROR: ' + (error.message || JSON.stringify(error)));
-      tbody.innerHTML =
-        '<tr><td colspan="3" style="color:#f97316;">일별 데이터 로드 에러</td></tr>';
-      return;
+    function setLoadingState() {
+      document.getElementById('sessions-value').innerHTML =
+        '<span class="skeleton"></span>';
+      document.getElementById('pageviews-value').innerHTML =
+        '<span class="skeleton"></span>';
+      document.getElementById('sessions-delta').innerHTML =
+        '<span class="skeleton small"></span>';
+      document.getElementById('pageviews-delta').innerHTML =
+        '<span class="skeleton small"></span>';
+      document.getElementById('daily-body').innerHTML =
+        '<tr><td colspan="3"><span class="skeleton row"></span></td></tr>';
     }
 
-    if (!data || data.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="3" style="color:#9ca3af;">최근 30일 데이터가 없습니다.</td></tr>';
-      return;
+    async function loadWeeklySummary() {
+      if (!currentClientId) return;
+
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+      const { data: recent, error: recentError } = await sb
+        .from('metrics_daily')
+        .select('sessions,pageviews,date')
+        .eq('client_id', currentClientId)
+        .gte('date', sevenDaysAgo.toISOString().slice(0,10));
+
+      if (recentError) {
+        alert('WEEKLY RECENT ERROR: ' + (recentError.message || JSON.stringify(recentError)));
+        return;
+      }
+
+      const { data: previous, error: previousError } = await sb
+        .from('metrics_daily')
+        .select('sessions,pageviews,date')
+        .eq('client_id', currentClientId)
+        .gte('date', fourteenDaysAgo.toISOString().slice(0,10))
+        .lt('date', sevenDaysAgo.toISOString().slice(0,10));
+
+      if (previousError) {
+        alert('WEEKLY PREV ERROR: ' + (previousError.message || JSON.stringify(previousError)));
+        return;
+      }
+
+      const recentSessions = (recent || []).reduce((s, r) => s + (r.sessions || 0), 0);
+      const recentPageviews = (recent || []).reduce((s, r) => s + (r.pageviews || 0), 0);
+      const prevSessions = (previous || []).reduce((s, r) => s + (r.sessions || 0), 0);
+      const prevPageviews = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
+
+      const sessionsValueEl = document.getElementById('sessions-value');
+      const pageviewsValueEl = document.getElementById('pageviews-value');
+      const sessionsDeltaEl = document.getElementById('sessions-delta');
+      const pageviewsDeltaEl = document.getElementById('pageviews-delta');
+
+      sessionsValueEl.textContent = formatNumber(recentSessions);
+      pageviewsValueEl.textContent = formatNumber(recentPageviews);
+
+      const sDelta = computeDelta(recentSessions, prevSessions);
+      const pDelta = computeDelta(recentPageviews, prevPageviews);
+
+      sessionsDeltaEl.className = sDelta.cls;
+      sessionsDeltaEl.textContent = sDelta.label;
+      pageviewsDeltaEl.className = pDelta.cls;
+      pageviewsDeltaEl.textContent = pDelta.label;
     }
 
-    const fmt = new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' });
+    async function loadDailyTable() {
+      if (!currentClientId) return;
 
-    tbody.innerHTML = data.map(row => {
-      const d = new Date(row.date);
-      return `
-        <tr>
-          <td>${fmt.format(d)}</td>
-          <td>${formatNumber(row.sessions)}</td>
-          <td>${formatNumber(row.pageviews)}</td>
-        </tr>
-      `;
-    }).join('');
+      const days = 30;
+      const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    const first = new Date(data[0].date);
-    const last = new Date(data[data.length - 1].date);
-    document.getElementById('range-label').textContent =
-      `${first.getMonth()+1}.${first.getDate()} – ${last.getMonth()+1}.${last.getDate()}`;
-  }
+      const { data, error } = await sb
+        .from('metrics_daily')
+        .select('date,sessions,pageviews')
+        .eq('client_id', currentClientId)
+        .gte('date', start.toISOString().slice(0,10))
+        .order('date', { ascending: true });
 
-  async function loadClients() {
-    const selectEl = document.getElementById('client-select');
-    const urlEl = document.getElementById('client-url');
+      const tbody = document.getElementById('daily-body');
 
-    const { data, error } = await sb
-      .from('clients')
-      .select('id,name,main_url')
-      .order('name', { ascending: true });
+      if (error) {
+        alert('DAILY ERROR: ' + (error.message || JSON.stringify(error)));
+        tbody.innerHTML =
+          '<tr><td colspan="3" style="color:#f97316;">일별 데이터 로드 에러</td></tr>';
+        return;
+      }
 
-    if (error) {
-      alert('CLIENTS ERROR: ' + (error.message || JSON.stringify(error)));
-      selectEl.innerHTML = '<option value="">Load error</option>';
-      return;
+      if (!data || data.length === 0) {
+        tbody.innerHTML =
+          '<tr><td colspan="3" style="color:#9ca3af;">최근 30일 데이터가 없습니다.</td></tr>';
+        return;
+      }
+
+      const fmt = new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' });
+
+      tbody.innerHTML = data.map(row => {
+        const d = new Date(row.date);
+        return `
+          <tr>
+            <td>${fmt.format(d)}</td>
+            <td>${formatNumber(row.sessions)}</td>
+            <td>${formatNumber(row.pageviews)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const first = new Date(data[0].date);
+      const last = new Date(data[data.length - 1].date);
+      document.getElementById('range-label').textContent =
+        `${first.getMonth()+1}.${first.getDate()} – ${last.getMonth()+1}.${last.getDate()}`;
     }
 
-    clientsCache = data || [];
+    async function loadClients() {
+      const selectEl = document.getElementById('client-select');
+      const urlEl = document.getElementById('client-url');
 
-    if (!clientsCache.length) {
-      selectEl.innerHTML = '<option value="">No clients</option>';
-      return;
+      const { data, error } = await sb
+        .from('clients')
+        .select('id,name,main_url')
+        .order('name', { ascending: true });
+
+      if (error) {
+        alert('CLIENTS ERROR: ' + (error.message || JSON.stringify(error)));
+        selectEl.innerHTML = '<option value="">Load error</option>';
+        return;
+      }
+
+      clientsCache = data || [];
+
+      if (!clientsCache.length) {
+        selectEl.innerHTML = '<option value="">No clients</option>';
+        return;
+      }
+
+      selectEl.innerHTML = clientsCache.map((c, idx) => `
+        <option value="${c.id}" ${idx === 0 ? 'selected' : ''}>
+          ${c.name}
+        </option>
+      `).join('');
+
+      currentClientId = clientsCache[0].id;
+      urlEl.textContent = clientsCache[0].main_url || '';
+
+      selectEl.addEventListener('change', async (e) => {
+        const id = e.target.value;
+        currentClientId = id || null;
+
+        const found = clientsCache.find(c => c.id === id);
+        urlEl.textContent = found?.main_url || '';
+
+        setLoadingState();
+        await Promise.all([loadWeeklySummary(), loadDailyTable()]);
+      });
     }
 
-    selectEl.innerHTML = clientsCache.map((c, idx) => `
-      <option value="${c.id}" ${idx === 0 ? 'selected' : ''}>
-        ${c.name}
-      </option>
-    `).join('');
-
-    currentClientId = clientsCache[0].id;
-    urlEl.textContent = clientsCache[0].main_url || '';
-
-    selectEl.addEventListener('change', async (e) => {
-      const id = e.target.value;
-      currentClientId = id || null;
-
-      const found = clientsCache.find(c => c.id === id);
-      urlEl.textContent = found?.main_url || '';
-
+    (async function init() {
       setLoadingState();
-      await Promise.all([loadWeeklySummary(), loadDailyTable()]);
-    });
-  }
-
-  (async function init() {
-    setLoadingState();
-    await loadClients();
-    if (currentClientId) {
-      await Promise.all([loadWeeklySummary(), loadDailyTable()]);
-    }
-  })();
-</script>
+      await loadClients();
+      if (currentClientId) {
+        await Promise.all([loadWeeklySummary(), loadDailyTable()]);
+      }
+    })();
+  </script>
+</body>
+</html>
