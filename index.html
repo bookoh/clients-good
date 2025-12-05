@@ -266,6 +266,18 @@
       </div>
     </section>
 
+    <section style="margin-bottom:12px;">
+      <div class="section-title">Top channels</div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">최근 7일 채널별 세션</div>
+        </div>
+        <div id="channels-body" style="font-size:11px; color:#9ca3af;">
+          <span class="skeleton row"></span>
+        </div>
+      </div>
+    </section>
+
     <section>
       <div class="section-title">Daily traffic log</div>
       <div class="card" style="background: radial-gradient(circle at top left, rgba(59,130,246,0.35), rgba(15,23,42,0.96));">
@@ -293,12 +305,10 @@
     </section>
 
     <footer>
-      © 2025 BSBKTV · All rights reserved.  
-      LIVE 데이터는 Supabase Analytics 테이블 기준이며, 내부 검토용입니다.
+      © 2025 BSBKTV · All rights reserved. LIVE 데이터는 Supabase Analytics 테이블 기준이며, 내부 참고용입니다.
     </footer>
   </div>
 
-  <!-- Supabase + 대시보드 스크립트 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const { createClient } = supabase;
@@ -348,6 +358,8 @@
         '<span class="skeleton small"></span>';
       document.getElementById('daily-body').innerHTML =
         '<tr><td colspan="3"><span class="skeleton row"></span></td></tr>';
+      document.getElementById('channels-body').innerHTML =
+        '<span class="skeleton row"></span>';
     }
 
     async function loadWeeklySummary() {
@@ -358,7 +370,7 @@
       const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
       const { data: recent, error: recentError } = await sb
-        .from('metrics_daily')
+        .from('metrics_daily_sum')
         .select('sessions,pageviews,date')
         .eq('client_id', currentClientId)
         .gte('date', sevenDaysAgo.toISOString().slice(0,10));
@@ -369,7 +381,7 @@
       }
 
       const { data: previous, error: previousError } = await sb
-        .from('metrics_daily')
+        .from('metrics_daily_sum')
         .select('sessions,pageviews,date')
         .eq('client_id', currentClientId)
         .gte('date', fourteenDaysAgo.toISOString().slice(0,10))
@@ -409,7 +421,7 @@
       const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const { data, error } = await sb
-        .from('metrics_daily')
+        .from('metrics_daily_sum')
         .select('date,sessions,pageviews')
         .eq('client_id', currentClientId)
         .gte('date', start.toISOString().slice(0,10))
@@ -427,6 +439,7 @@
       if (!data || data.length === 0) {
         tbody.innerHTML =
           '<tr><td colspan="3" style="color:#9ca3af;">최근 30일 데이터가 없습니다.</td></tr>';
+        document.getElementById('range-label').textContent = '최근 30일';
         return;
       }
 
@@ -447,6 +460,39 @@
       const last = new Date(data[data.length - 1].date);
       document.getElementById('range-label').textContent =
         `${first.getMonth()+1}.${first.getDate()} – ${last.getMonth()+1}.${last.getDate()}`;
+    }
+
+    async function loadChannels7d() {
+      if (!currentClientId) return;
+
+      const body = document.getElementById('channels-body');
+      body.innerHTML = '<span class="skeleton row"></span>';
+
+      const { data, error } = await sb
+        .from('metrics_channel_7d')
+        .select('channel,sessions,pageviews')
+        .eq('client_id', currentClientId)
+        .order('sessions', { ascending: false });
+
+      if (error) {
+        body.innerHTML =
+          '<span style="color:#f97316;">채널 데이터 로드 에러</span>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        body.innerHTML = '<span>최근 7일 채널 데이터가 없습니다.</span>';
+        return;
+      }
+
+      body.innerHTML = data.map(row => {
+        return `
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="color:#e5e7eb;">${row.channel || '기타'}</span>
+            <span>${formatNumber(row.sessions)}세션 · ${formatNumber(row.pageviews)}뷰</span>
+          </div>
+        `;
+      }).join('');
     }
 
     async function loadClients() {
@@ -488,7 +534,11 @@
         urlEl.textContent = found?.main_url || '';
 
         setLoadingState();
-        await Promise.all([loadWeeklySummary(), loadDailyTable()]);
+        await Promise.all([
+          loadWeeklySummary(),
+          loadDailyTable(),
+          loadChannels7d()
+        ]);
       });
     }
 
@@ -496,7 +546,11 @@
       setLoadingState();
       await loadClients();
       if (currentClientId) {
-        await Promise.all([loadWeeklySummary(), loadDailyTable()]);
+        await Promise.all([
+          loadWeeklySummary(),
+          loadDailyTable(),
+          loadChannels7d()
+        ]);
       }
     })();
   </script>
