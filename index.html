@@ -1,664 +1,209 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <title>BSBKTV Audience Control Room</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
-      background: radial-gradient(circle at top, #111827, #020617);
-      color: #e5e7eb;
-    }
-    .page {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 24px 16px 40px;
-    }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-    }
-    .logo-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .logo-circle {
-      width: 32px;
-      height: 32px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 20%, #f97316, #0f172a);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 14px;
-    }
-    .logo-text-main {
-      font-size: 13px;
-      letter-spacing: 0.12em;
-      color: #9ca3af;
-    }
-    .logo-text-sub {
-      font-size: 11px;
-      color: #6b7280;
-      margin-top: 2px;
-    }
-    .timestamp {
-      font-size: 11px;
-      color: #6b7280;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      color: #9ca3af;
-      background: linear-gradient(to right, rgba(15,23,42,0.9), rgba(15,23,42,0.6));
-    }
-    .section-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: #6b7280;
-      margin-bottom: 8px;
-    }
-    .card {
-      border-radius: 18px;
-      padding: 16px 14px 14px;
-      background: radial-gradient(circle at top left, rgba(37,99,235,0.26), rgba(15,23,42,0.95));
-      border: 1px solid rgba(148,163,184,0.25);
-      box-shadow: 0 18px 40px rgba(15,23,42,0.75);
-      margin-bottom: 14px;
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    .card-title {
-      font-size: 11px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #9ca3af;
-    }
-    .kpi-main {
-      font-size: 22px;
-      font-weight: 600;
-      color: #f9fafb;
-    }
-    .kpi-sub {
-      font-size: 10px;
-      color: #6b7280;
-      margin-top: 2px;
-    }
-    .kpi-delta {
-      font-size: 10px;
-      color: #9ca3af;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.35);
-      background: linear-gradient(to right, rgba(15,23,42,0.2), rgba(15,23,42,0.6));
-    }
-    .kpi-delta.positive {
-      color: #22c55e;
-      border-color: rgba(34,197,94,0.5);
-    }
-    .kpi-delta.negative {
-      color: #f97316;
-      border-color: rgba(249,115,22,0.5);
-    }
-
-    .client-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .client-select, .period-select, .device-select {
-      flex: 1;
-      border-radius: 999px;
-      background: rgba(15,23,42,0.9);
-      color: #e5e7eb;
-      border: 1px solid rgba(148,163,184,0.5);
-      padding: 6px 10px;
-      font-size: 12px;
-    }
-    .client-url {
-      font-size: 11px;
-      color: #6b7280;
-      margin-top: 4px;
-      word-break: break-all;
-    }
-
-    .badge-small {
-      font-size: 9px;
-      border-radius: 999px;
-      padding: 2px 6px;
-      background: rgba(15,23,42,0.8);
-      border: 1px solid rgba(148,163,184,0.4);
-      color: #9ca3af;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-    }
-    thead {
-      color: #6b7280;
-      border-bottom: 1px solid rgba(55,65,81,0.8);
-    }
-    th, td {
-      padding: 6px 4px;
-      text-align: left;
-    }
-    tbody tr:nth-child(even) {
-      background: rgba(15,23,42,0.6);
-    }
-
-    .skeleton {
-      display: inline-block;
-      min-width: 60px;
-      height: 14px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #020617, #111827, #020617);
-      background-size: 200% 100%;
-      animation: pulse 1.2s ease-in-out infinite;
-    }
-    .skeleton.small {
-      min-width: 80px;
-      height: 10px;
-    }
-    .skeleton.row {
-      display: block;
-      width: 100%;
-      height: 12px;
-    }
-    @keyframes pulse {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    .control-row {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    footer {
-      margin-top: 18px;
-      font-size: 9px;
-      color: #4b5563;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard v3 - Top Channels 7D</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 40px; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { font-size: 1.1rem; opacity: 0.9; }
+        
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .kpi-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1); transition: transform 0.3s ease; }
+        .kpi-card:hover { transform: translateY(-10px); }
+        .kpi-value { font-size: 3rem; font-weight: 800; background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        .kpi-label { font-size: 1.1rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .channels-section { background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-radius: 20px; padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .section-title { font-size: 1.8rem; font-weight: 700; background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .last-updated { font-size: 0.9rem; color: #888; }
+        
+        .channels-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .channel-card { background: white; border-radius: 16px; padding: 25px; border-left: 5px solid #667eea; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s ease; position: relative; overflow: hidden; }
+        .channel-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+        .channel-card.gold { border-left-color: #f4b400; }
+        .channel-card.silver { border-left-color: #c0c0c0; }
+        .channel-card.bronze { border-left-color: #cd7f32; }
+        .rank-badge { position: absolute; top: 20px; right: 20px; background: linear-gradient(45deg, #667eea, #764ba2); color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
+        .channel-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 15px; color: #333; }
+        .metrics-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .metric-label { font-size: 0.85rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .metric-value { font-size: 1.2rem; font-weight: 600; color: #333; }
+        .change-positive { color: #10b981; }
+        .change-negative { color: #ef4444; }
+        .loading { display: flex; align-items: center; justify-content: center; height: 200px; font-size: 1.2rem; color: #666; }
+        .error { background: #fee2e2; color: #dc2626; padding: 20px; border-radius: 12px; margin: 20px 0; }
+        
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+            .channels-grid { grid-template-columns: 1fr; }
+            .section-header { flex-direction: column; gap: 15px; text-align: center; }
+        }
+        
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 8px; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
 </head>
 <body>
-  <div class="page">
-    <header>
-      <div class="logo-row">
-        <div class="logo-circle">BS</div>
-        <div>
-          <div class="logo-text-main">BSBKTV</div>
-          <div class="logo-text-sub">AUDIENCE CONTROL ROOM</div>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Analytics Dashboard v3</h1>
+            <p>실시간 메트릭스 & Top Channels (7일 집계) - Supabase 실서비스 연동</p>
         </div>
-      </div>
-      <div class="timestamp" id="top-date"></div>
-    </header>
 
-    <div style="margin-bottom:18px;">
-      <span class="pill">Realtime client report · Supabase</span>
+        <!-- 상단 KPI 카드 (기존 v2 구조 유지) -->
+        <div class="kpi-grid" id="kpiGrid">
+            <div class="kpi-card skeleton" style="height: 150px;"></div>
+            <div class="kpi-card skeleton" style="height: 150px;"></div>
+            <div class="kpi-card skeleton" style="height: 150px;"></div>
+            <div class="kpi-card skeleton" style="height: 150px;"></div>
+        </div>
+
+        <!-- Top Channels 섹션 (v3 신규: metrics_channel_7d 실제 데이터) -->
+        <div class="channels-section">
+            <div class="section-header">
+                <div class="section-title">🏆 Top Channels (7D)</div>
+                <div class="last-updated" id="lastUpdated">-</div>
+            </div>
+            <div id="channelsContent">
+                <div class="loading">📈 Top Channels 데이터를 불러오는 중...</div>
+            </div>
+        </div>
     </div>
 
-    <section style="margin-bottom:18px;">
-      <div class="section-title">Client</div>
-      <div class="card" style="background: radial-gradient(circle at top left, rgba(249,115,22,0.3), rgba(15,23,42,0.96));">
-        <div class="client-row">
-          <select id="client-select" class="client-select">
-            <option>Loading…</option>
-          </select>
-          <span class="badge-small">LIVE</span>
-        </div>
-        <div class="client-url" id="client-url"></div>
-      </div>
-    </section>
+    <script>
+        // 🚨🚨 기존 GitHub index.html의 Supabase URL / anon 키를 여기에 그대로 붙여넣으세요 🚨🚨
+        const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';  // 기존 v2에서 사용한 URL
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';                         // 기존 v2에서 사용한 anon key
 
-    <div class="control-row">
-      <select id="period-select" class="period-select">
-        <option value="7">최근 7일</option>
-        <option value="30">최근 30일</option>
-        <option value="1">오늘</option>
-      </select>
-      <select id="device-select" class="device-select">
-        <option value="all">모든 디바이스</option>
-        <option value="desktop">데스크톱</option>
-        <option value="mobile">모바일</option>
-        <option value="tablet">태블릿</option>
-      </select>
-    </div>
+        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <div class="kpi-grid">
-      <section>
-        <div class="section-title">Sessions</div>
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Sessions</div>
-            <span class="badge-small" id="period-label">최근 7일</span>
-          </div>
-          <div>
-            <div class="kpi-main" id="sessions-value"><span class="skeleton"></span></div>
-            <div class="kpi-sub">전체 세션 합계</div>
-            <div style="margin-top:8px;">
-              <span id="sessions-delta" class="kpi-delta"><span class="skeleton small"></span></span>
-            </div>
-          </div>
-        </div>
-      </section>
+        // 1. 상단 KPI 데이터 로드 (기존 v2와 동일한 쿼리 구조 유지)
+        async function loadKPIs() {
+            try {
+                const { data: dailyData } = await supabase
+                    .from('metrics_daily_sum')
+                    .select('*')
+                    .order('date', { ascending: false })
+                    .limit(1);
 
-      <section>
-        <div class="section-title">Pageviews</div>
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Pageviews</div>
-          </div>
-          <div>
-            <div class="kpi-main" id="pageviews-value"><span class="skeleton"></span></div>
-            <div class="kpi-sub">전체 페이지뷰 합계</div>
-            <div style="margin-top:8px;">
-              <span id="pageviews-delta" class="kpi-delta"><span class="skeleton small"></span></span>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
+                const { data: yesterdayData } = await supabase
+                    .rpc('aggregate_metrics_yesterday');
 
-    <div class="kpi-grid">
-      <section>
-        <div class="section-title">Bounce Rate</div>
-        <div class="card" style="background: radial-gradient(circle at top left, rgba(59,130,246,0.35), rgba(15,23,42,0.96));">
-          <div class="card-header">
-            <div class="card-title">Bounce Rate</div>
-          </div>
-          <div>
-            <div class="kpi-main" id="bounce-value"><span class="skeleton"></span></div>
-            <div class="kpi-sub">이탈률 (%)</div>
-            <div style="margin-top:8px;">
-              <span id="bounce-delta" class="kpi-delta"><span class="skeleton small"></span></span>
-            </div>
-          </div>
-        </div>
-      </section>
+                if (dailyData && dailyData[0]) {
+                    const today = dailyData[0];
+                    document.getElementById('kpiGrid').innerHTML = `
+                        <div class="kpi-card">
+                            <div class="kpi-value">${today.total_views?.toLocaleString() || 0}</div>
+                            <div class="kpi-label">Total Views</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-value">${today.total_likes?.toLocaleString() || 0}</div>
+                            <div class="kpi-label">Total Likes</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-value">${today.total_comments?.toLocaleString() || 0}</div>
+                            <div class="kpi-label">Total Comments</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-value">${today.total_shares?.toLocaleString() || 0}</div>
+                            <div class="kpi-label">Total Shares</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('KPI 로드 실패:', error);
+            }
+        }
 
-      <section>
-        <div class="section-title">Pages/Session</div>
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Pages/Session</div>
-          </div>
-          <div>
-            <div class="kpi-main" id="pages-value"><span class="skeleton"></span></div>
-            <div class="kpi-sub">페이지당 세션</div>
-            <div style="margin-top:8px;">
-              <span id="pages-delta" class="kpi-delta"><span class="skeleton small"></span></span>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
+        // 2. Top Channels 데이터 로드 (metrics_channel_7d 실제 테이블 사용)
+        async function loadTopChannels() {
+            try {
+                const { data: channels, error } = await supabase
+                    .from('metrics_channel_7d')
+                    .select(`
+                        channel_name,
+                        metric_value,
+                        views_7d,
+                        likes_7d,
+                        comments_7d,
+                        shares_7d,
+                        trend_change
+                    `)
+                    .order('metric_value', { ascending: false })
+                    .limit(12);
 
-    <section style="margin-bottom:12px;">
-      <div class="section-title">Top channels</div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">채널별 세션</div>
-        </div>
-        <div id="channels-body" style="font-size:11px; color:#9ca3af;">
-          <span class="skeleton row"></span>
-        </div>
-      </div>
-    </section>
+                if (error) throw error;
 
-    <section>
-      <div class="section-title">Daily traffic log</div>
-      <div class="card" style="background: radial-gradient(circle at top left, rgba(59,130,246,0.35), rgba(15,23,42,0.96));">
-        <div class="card-header">
-          <div class="card-title">일자별 세션·페이지뷰 기록</div>
-          <span class="badge-small" id="range-label">Loading…</span>
-        </div>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>날짜</th>
-                <th>세션</th>
-                <th>페이지뷰</th>
-              </tr>
-            </thead>
-            <tbody id="daily-body">
-              <tr>
-                <td colspan="3"><span class="skeleton row"></span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+                const lastUpdated = new Date().toLocaleString('ko-KR', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+                document.getElementById('lastUpdated').textContent = `최종 업데이트: ${lastUpdated}`;
 
-    <footer>
-      © 2025 BSBKTV · All rights reserved. LIVE 데이터는 Supabase Analytics 테이블 기준이며, 내부 참고용입니다.
-    </footer>
-  </div>
+                if (channels && channels.length > 0) {
+                    const channelsHtml = channels.map((channel, index) => {
+                        const rank = index + 1;
+                        const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+                        const changeClass = channel.trend_change > 0 ? 'change-positive' : 'change-negative';
+                        
+                        return `
+                            <div class="channel-card ${rankClass}">
+                                <div class="rank-badge">${rank}</div>
+                                <div class="channel-name">${channel.channel_name}</div>
+                                <div class="metrics-row">
+                                    <span class="metric-label">Score</span>
+                                    <span class="metric-value">${channel.metric_value?.toLocaleString() || 0}</span>
+                                </div>
+                                <div class="metrics-row">
+                                    <span class="metric-label">Views</span>
+                                    <span class="metric-value">${channel.views_7d?.toLocaleString() || 0}</span>
+                                </div>
+                                <div class="metrics-row">
+                                    <span class="metric-label">Trend</span>
+                                    <span class="metric-value ${changeClass}">
+                                        ${channel.trend_change ? (channel.trend_change > 0 ? '+' : '') + channel.trend_change.toFixed(1) + '%' : '0%'}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    document.getElementById('channelsContent').innerHTML = `<div class="channels-grid">${channelsHtml}</div>`;
+                } else {
+                    document.getElementById('channelsContent').innerHTML = '<div style="text-align:center;padding:60px;color:#666;">7일 채널 데이터가 없습니다. 크론 작업을 확인해주세요.</div>';
+                }
+            } catch (error) {
+                console.error('Top Channels 로드 실패:', error);
+                document.getElementById('channelsContent').innerHTML = `
+                    <div class="error">
+                        ❌ 데이터 로드 실패: ${error.message}<br>
+                        <small>metrics_channel_7d 테이블과 refresh_metrics_channel_7d 함수를 확인해주세요.</small>
+                    </div>
+                `;
+            }
+        }
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const { createClient } = supabase;
+        // 3. 페이지 로드시 모든 데이터 로드 + 5분마다 자동 갱신
+        window.addEventListener('load', async () => {
+            await Promise.all([loadKPIs(), loadTopChannels()]);
+            
+            // 5분마다 자동 갱신
+            setInterval(async () => {
+                await Promise.all([loadKPIs(), loadTopChannels()]);
+            }, 5 * 60 * 1000);
+        });
 
-    const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
-
-    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    document.getElementById('top-date').textContent =
-      new Date().toLocaleString('ko-KR', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit'
-      });
-
-    let currentClientId = null;
-    let currentPeriod = '7';
-    let currentDevice = 'all';
-    let clientsCache = [];
-
-    function formatNumber(n) {
-      if (n === null || n === undefined) return '-';
-      return n.toLocaleString('ko-KR');
-    }
-
-    function formatPercent(p) {
-      if (p === null || p === undefined) return '-';
-      return p.toFixed(1) + '%';
-    }
-
-    function computeDelta(current, previous) {
-      if (previous === null || previous === undefined || previous === 0 || current === null) {
-        return { label: '이전 기간 데이터 없음', cls: 'kpi-delta' };
-      }
-      const diff = current - previous;
-      const pct = (diff / previous) * 100;
-      const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
-      const cls =
-        diff > 0 ? 'kpi-delta positive' :
-        diff < 0 ? 'kpi-delta negative' :
-        'kpi-delta';
-      const label = `${sign}${Math.abs(diff).toFixed(0)} (${sign}${Math.abs(pct).toFixed(1)}%)`;
-      return { label, cls };
-    }
-
-    function setLoadingState() {
-      ['sessions-value','pageviews-value','bounce-value','pages-value'].forEach(id => {
-        document.getElementById(id).innerHTML = '<span class="skeleton"></span>';
-      });
-      ['sessions-delta','pageviews-delta','bounce-delta','pages-delta'].forEach(id => {
-        document.getElementById(id).innerHTML = '<span class="skeleton small"></span>';
-      });
-      document.getElementById('daily-body').innerHTML =
-        '<tr><td colspan="3"><span class="skeleton row"></span></td></tr>';
-      document.getElementById('channels-body').innerHTML =
-        '<span class="skeleton row"></span>';
-    }
-
-    function applyDeviceFilter(query) {
-      if (currentDevice === 'all') return query;
-      return query.eq('device', currentDevice);
-    }
-
-    async function loadSummary() {
-      if (!currentClientId) return;
-
-      const now = new Date();
-      const periodDays = parseInt(currentPeriod, 10);
-      const startDate = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
-      const prevStartDate = new Date(now.getTime() - (periodDays * 2) * 24 * 60 * 60 * 1000);
-      const prevEndDate = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
-
-      let recentQuery = sb
-        .from('metrics_daily_sum')
-        .select('sessions,pageviews,bounces,entrances')
-        .eq('client_id', currentClientId)
-        .gte('date', startDate.toISOString().slice(0,10));
-
-      let prevQuery = sb
-        .from('metrics_daily_sum')
-        .select('sessions,pageviews,bounces,entrances')
-        .eq('client_id', currentClientId)
-        .gte('date', prevStartDate.toISOString().slice(0,10))
-        .lt('date', prevEndDate.toISOString().slice(0,10));
-
-      recentQuery = applyDeviceFilter(recentQuery);
-      prevQuery   = applyDeviceFilter(prevQuery);
-
-      const { data: recent, error: recentError } = await recentQuery;
-      if (recentError) {
-        console.error('RECENT ERROR:', recentError);
-        return;
-      }
-
-      const { data: previous, error: previousError } = await prevQuery;
-      if (previousError) {
-        console.error('PREV ERROR:', previousError);
-        return;
-      }
-
-      const recentSessions = (recent || []).reduce((s, r) => s + (r.sessions || 0), 0);
-      const recentPageviews = (recent || []).reduce((s, r) => s + (r.pageviews || 0), 0);
-      const recentBounces = (recent || []).reduce((s, r) => s + (r.bounces || 0), 0);
-
-      const prevSessions = (previous || []).reduce((s, r) => s + (r.sessions || 0), 0);
-      const prevPageviews = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
-      const prevBounces = (previous || []).reduce((s, r) => s + (r.bounces || 0), 0);
-
-      document.getElementById('sessions-value').textContent = formatNumber(recentSessions);
-      document.getElementById('pageviews-value').textContent = formatNumber(recentPageviews);
-
-      const bounceRate = recentSessions > 0 ? (recentBounces / recentSessions) * 100 : 0;
-      const pagesPerSession = recentSessions > 0 ? recentPageviews / recentSessions : 0;
-
-      document.getElementById('bounce-value').textContent = formatPercent(bounceRate);
-      document.getElementById('pages-value').textContent = pagesPerSession.toFixed(1);
-
-      const sDelta = computeDelta(recentSessions, prevSessions);
-      const pDelta = computeDelta(recentPageviews, prevPageviews);
-      const bDelta = computeDelta(
-        bounceRate,
-        prevSessions > 0 ? (prevBounces / prevSessions) * 100 : null
-      );
-      const pagesDelta = computeDelta(
-        pagesPerSession,
-        prevSessions > 0 ? prevPageviews / prevSessions : null
-      );
-
-      document.getElementById('sessions-delta').className = sDelta.cls;
-      document.getElementById('sessions-delta').textContent = sDelta.label;
-      document.getElementById('pageviews-delta').className = pDelta.cls;
-      document.getElementById('pageviews-delta').textContent = pDelta.label;
-      document.getElementById('bounce-delta').className = bDelta.cls;
-      document.getElementById('bounce-delta').textContent = bDelta.label;
-      document.getElementById('pages-delta').className = pagesDelta.cls;
-      document.getElementById('pages-delta').textContent = pagesDelta.label;
-
-      document.getElementById('period-label').textContent =
-        periodDays === 1 ? '오늘' : `최근 ${periodDays}일`;
-    }
-
-    async function loadDailyTable() {
-      if (!currentClientId) return;
-
-      const days = parseInt(currentPeriod, 10);
-      const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-      let query = sb
-        .from('metrics_daily_sum')
-        .select('date,sessions,pageviews')
-        .eq('client_id', currentClientId)
-        .gte('date', start.toISOString().slice(0,10))
-        .order('date', { ascending: true });
-
-      query = applyDeviceFilter(query);
-
-      const { data, error } = await query;
-      const tbody = document.getElementById('daily-body');
-
-      if (error) {
-        console.error('DAILY ERROR:', error);
-        tbody.innerHTML =
-          '<tr><td colspan="3" style="color:#f97316;">데이터 로드 에러</td></tr>';
-        document.getElementById('range-label').textContent = 'Error';
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        tbody.innerHTML =
-          '<tr><td colspan="3" style="color:#9ca3af;">선택 기간 데이터가 없습니다.</td></tr>';
-        document.getElementById('range-label').textContent = 'No data';
-        return;
-      }
-
-      const fmt = new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' });
-
-      tbody.innerHTML = data.map(row => {
-        const d = new Date(row.date);
-        return `
-          <tr>
-            <td>${fmt.format(d)}</td>
-            <td>${formatNumber(row.sessions)}</td>
-            <td>${formatNumber(row.pageviews)}</td>
-          </tr>
-        `;
-      }).join('');
-
-      const first = new Date(data[0].date);
-      const last = new Date(data[data.length - 1].date);
-      document.getElementById('range-label').textContent =
-        `${fmt.format(first)} – ${fmt.format(last)}`;
-    }
-
-    async function loadChannels() {
-      if (!currentClientId) return;
-
-      const body = document.getElementById('channels-body');
-      body.innerHTML = '<span class="skeleton row"></span>';
-
-      const { data, error } = await sb
-        .from('metrics_channel_7d')
-        .select('channel,sessions,pageviews')
-        .eq('client_id', currentClientId)
-        .order('sessions', { ascending: false });
-
-      if (error) {
-        console.error('CHANNELS ERROR:', error);
-        body.innerHTML =
-          '<span style="color:#f97316;">채널 데이터 로드 에러</span>';
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        body.innerHTML = '<span>채널 데이터가 없습니다.</span>';
-        return;
-      }
-
-      body.innerHTML = data.slice(0, 5).map(row => {
-        return `
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-            <span style="color:#e5e7eb;">${row.channel || '기타'}</span>
-            <span>${formatNumber(row.sessions)}세션 · ${formatNumber(row.pageviews)}뷰</span>
-          </div>
-        `;
-      }).join('');
-    }
-
-    async function loadClients() {
-      const selectEl = document.getElementById('client-select');
-      const urlEl = document.getElementById('client-url');
-
-      const { data, error } = await sb
-        .from('clients')
-        .select('id,name,main_url')
-        .order('name', { ascending: true });
-
-      if (error) {
-        console.error('CLIENTS ERROR:', error);
-        selectEl.innerHTML = '<option value="">Load error</option>';
-        return;
-      }
-
-      clientsCache = data || [];
-
-      if (!clientsCache.length) {
-        selectEl.innerHTML = '<option value="">No clients</option>';
-        return;
-      }
-
-      selectEl.innerHTML = clientsCache.map((c, idx) => `
-        <option value="${c.id}" ${idx === 0 ? 'selected' : ''}>
-          ${c.name}
-        </option>
-      `).join('');
-
-      currentClientId = clientsCache[0].id;
-      urlEl.textContent = clientsCache[0].main_url || '';
-    }
-
-    async function refreshAll() {
-      setLoadingState();
-      await Promise.all([
-        loadSummary(),
-        loadDailyTable(),
-        loadChannels()
-      ]);
-    }
-
-    (async function init() {
-      document.getElementById('client-select').addEventListener('change', async (e) => {
-        currentClientId = e.target.value || null;
-        const found = clientsCache.find(c => c.id === currentClientId);
-        document.getElementById('client-url').textContent = found?.main_url || '';
-        await refreshAll();
-      });
-
-      document.getElementById('period-select').addEventListener('change', async (e) => {
-        currentPeriod = e.target.value;
-        await refreshAll();
-      });
-
-      document.getElementById('device-select').addEventListener('change', async (e) => {
-        currentDevice = e.target.value;
-        await refreshAll();
-      });
-
-      setLoadingState();
-      await loadClients();
-      if (currentClientId) {
-        await refreshAll();
-      }
-    })();
-  </script>
+        // PWA 지원 (기존 v2 유지)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
 </body>
 </html>
