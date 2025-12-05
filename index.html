@@ -10,30 +10,204 @@
   <pre id="out"></pre>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const { createClient } = supabase;
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const { createClient } = supabase;
 
-    const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
+  const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
 
-    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    document.getElementById('btn').addEventListener('click', async () => {
-      const out = document.getElementById('out');
-      out.textContent = '요청 중...';
-
-      const { data, error } = await sb
-        .from('clients')
-        .select('id,name,main_url')
-        .limit(5);
-
-      if (error) {
-        out.textContent = 'ERROR: ' + (error.message || JSON.stringify(error));
-        return;
-      }
-
-      out.textContent = JSON.stringify(data, null, 2);
+  document.getElementById('top-date').textContent =
+    new Date().toLocaleString('ko-KR', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
     });
-  </script>
-</body>
-</html>
+
+  let currentClientId = null;
+  let clientsCache = [];
+
+  function formatNumber(n) {
+    if (n === null || n === undefined) return '-';
+    return n.toLocaleString('ko-KR');
+  }
+
+  function computeDelta(current, previous) {
+    if (!previous || previous === 0 || current === null) {
+      return { label: '이전 기간 데이터 없음', cls: 'kpi-delta' };
+    }
+    const diff = current - previous;
+    const pct = previous === 0 ? 0 : (diff / previous) * 100;
+    const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
+    const cls =
+      diff > 0 ? 'kpi-delta positive' :
+      diff < 0 ? 'kpi-delta negative' :
+      'kpi-delta';
+    const label = `${sign}${Math.abs(diff)} (${sign}${Math.abs(pct).toFixed(1)}%) vs 직전 7일`;
+    return { label, cls };
+  }
+
+  function setLoadingState() {
+    document.getElementById('sessions-value').innerHTML =
+      '<span class="skeleton"></span>';
+    document.getElementById('pageviews-value').innerHTML =
+      '<span class="skeleton"></span>';
+    document.getElementById('sessions-delta').innerHTML =
+      '<span class="skeleton small"></span>';
+    document.getElementById('pageviews-delta').innerHTML =
+      '<span class="skeleton small"></span>';
+    document.getElementById('daily-body').innerHTML =
+      '<tr><td colspan="3"><span class="skeleton row"></span></td></tr>';
+  }
+
+  async function loadWeeklySummary() {
+    if (!currentClientId) return;
+
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    const { data: recent, error: recentError } = await sb
+      .from('metrics_daily')
+      .select('sessions,pageviews,date')
+      .eq('client_id', currentClientId)
+      .gte('date', sevenDaysAgo.toISOString().slice(0,10));
+
+    if (recentError) {
+      alert('WEEKLY RECENT ERROR: ' + (recentError.message || JSON.stringify(recentError)));
+      return;
+    }
+
+    const { data: previous, error: previousError } = await sb
+      .from('metrics_daily')
+      .select('sessions,pageviews,date')
+      .eq('client_id', currentClientId)
+      .gte('date', fourteenDaysAgo.toISOString().slice(0,10))
+      .lt('date', sevenDaysAgo.toISOString().slice(0,10));
+
+    if (previousError) {
+      alert('WEEKLY PREV ERROR: ' + (previousError.message || JSON.stringify(previousError)));
+      return;
+    }
+
+    const recentSessions = (recent || []).reduce((s, r) => s + (r.sessions || 0), 0);
+    const recentPageviews = (recent || []).reduce((s, r) => s + (r.pageviews || 0), 0);
+    const prevSessions = (previous || []).reduce((s, r) => s + (r.sessions || 0), 0);
+    const prevPageviews = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
+
+    const sessionsValueEl = document.getElementById('sessions-value');
+    const pageviewsValueEl = document.getElementById('pageviews-value');
+    const sessionsDeltaEl = document.getElementById('sessions-delta');
+    const pageviewsDeltaEl = document.getElementById('pageviews-delta');
+
+    sessionsValueEl.textContent = formatNumber(recentSessions);
+    pageviewsValueEl.textContent = formatNumber(recentPageviews);
+
+    const sDelta = computeDelta(recentSessions, prevSessions);
+    const pDelta = computeDelta(recentPageviews, prevPageviews);
+
+    sessionsDeltaEl.className = sDelta.cls;
+    sessionsDeltaEl.textContent = sDelta.label;
+    pageviewsDeltaEl.className = pDelta.cls;
+    pageviewsDeltaEl.textContent = pDelta.label;
+  }
+
+  async function loadDailyTable() {
+    if (!currentClientId) return;
+
+    const days = 30;
+    const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const { data, error } = await sb
+      .from('metrics_daily')
+      .select('date,sessions,pageviews')
+      .eq('client_id', currentClientId)
+      .gte('date', start.toISOString().slice(0,10))
+      .order('date', { ascending: true });
+
+    const tbody = document.getElementById('daily-body');
+
+    if (error) {
+      alert('DAILY ERROR: ' + (error.message || JSON.stringify(error)));
+      tbody.innerHTML =
+        '<tr><td colspan="3" style="color:#f97316;">일별 데이터 로드 에러</td></tr>';
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML =
+        '<tr><td colspan="3" style="color:#9ca3af;">최근 30일 데이터가 없습니다.</td></tr>';
+      return;
+    }
+
+    const fmt = new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' });
+
+    tbody.innerHTML = data.map(row => {
+      const d = new Date(row.date);
+      return `
+        <tr>
+          <td>${fmt.format(d)}</td>
+          <td>${formatNumber(row.sessions)}</td>
+          <td>${formatNumber(row.pageviews)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const first = new Date(data[0].date);
+    const last = new Date(data[data.length - 1].date);
+    document.getElementById('range-label').textContent =
+      `${first.getMonth()+1}.${first.getDate()} – ${last.getMonth()+1}.${last.getDate()}`;
+  }
+
+  async function loadClients() {
+    const selectEl = document.getElementById('client-select');
+    const urlEl = document.getElementById('client-url');
+
+    const { data, error } = await sb
+      .from('clients')
+      .select('id,name,main_url')
+      .order('name', { ascending: true });
+
+    if (error) {
+      alert('CLIENTS ERROR: ' + (error.message || JSON.stringify(error)));
+      selectEl.innerHTML = '<option value="">Load error</option>';
+      return;
+    }
+
+    clientsCache = data || [];
+
+    if (!clientsCache.length) {
+      selectEl.innerHTML = '<option value="">No clients</option>';
+      return;
+    }
+
+    selectEl.innerHTML = clientsCache.map((c, idx) => `
+      <option value="${c.id}" ${idx === 0 ? 'selected' : ''}>
+        ${c.name}
+      </option>
+    `).join('');
+
+    currentClientId = clientsCache[0].id;
+    urlEl.textContent = clientsCache[0].main_url || '';
+
+    selectEl.addEventListener('change', async (e) => {
+      const id = e.target.value;
+      currentClientId = id || null;
+
+      const found = clientsCache.find(c => c.id === id);
+      urlEl.textContent = found?.main_url || '';
+
+      setLoadingState();
+      await Promise.all([loadWeeklySummary(), loadDailyTable()]);
+    });
+  }
+
+  (async function init() {
+    setLoadingState();
+    await loadClients();
+    if (currentClientId) {
+      await Promise.all([loadWeeklySummary(), loadDailyTable()]);
+    }
+  })();
+</script>
