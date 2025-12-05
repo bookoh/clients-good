@@ -39,6 +39,7 @@
         .change-negative { color: #ef4444; }
         .loading { display: flex; align-items: center; justify-content: center; height: 200px; font-size: 1.2rem; color: #666; }
         .error { background: #fee2e2; color: #dc2626; padding: 20px; border-radius: 12px; margin: 20px 0; }
+        .debug { background: #fef3c7; color: #92400e; padding: 15px; border-radius: 8px; margin: 10px 0; font-family: monospace; font-size: 0.9rem; }
         
         @media (max-width: 768px) {
             .kpi-grid { grid-template-columns: 1fr; }
@@ -57,7 +58,7 @@
             <p>실시간 메트릭스 & Top Channels (7일 집계) - Supabase 실서비스 연동</p>
         </div>
 
-        <!-- 상단 KPI 카드 (기존 v2 구조 유지) -->
+        <!-- 상단 KPI 카드 -->
         <div class="kpi-grid" id="kpiGrid">
             <div class="kpi-card skeleton" style="height: 150px;"></div>
             <div class="kpi-card skeleton" style="height: 150px;"></div>
@@ -65,36 +66,44 @@
             <div class="kpi-card skeleton" style="height: 150px;"></div>
         </div>
 
-        <!-- Top Channels 섹션 (v3 신규: metrics_channel_7d 실제 데이터) -->
+        <!-- Top Channels 섹션 -->
         <div class="channels-section">
             <div class="section-header">
                 <div class="section-title">🏆 Top Channels (7D)</div>
                 <div class="last-updated" id="lastUpdated">-</div>
             </div>
             <div id="channelsContent">
-                <div class="loading">📈 Top Channels 데이터를 불러오는 중...</div>
+                <div class="loading">📈 초기화 중...</div>
             </div>
         </div>
     </div>
 
     <script>
-        // 🚨🚨 기존 GitHub index.html의 Supabase URL / anon 키를 여기에 그대로 붙여넣으세요 🚨🚨
-        const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';  // 기존 v2에서 사용한 URL
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';                         // 기존 v2에서 사용한 anon key
+        // ✅ 이미 입력된 Supabase 설정 (수정 불필요)
+        const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
+        
+        // 🔧 수정1: 소문자 supabase.createClient()
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // 디버그 로그
+        console.log('✅ Supabase 초기화 완료:', supabase);
 
-        // 1. 상단 KPI 데이터 로드 (기존 v2와 동일한 쿼리 구조 유지)
+        // 1. 상단 KPI 데이터 로드 (오류 방지)
         async function loadKPIs() {
             try {
-                const { data: dailyData } = await supabase
+                // metrics_daily_sum 테이블 확인
+                const { data: dailyData, error: dailyError } = await supabase
                     .from('metrics_daily_sum')
-                    .select('*')
+                    .select('total_views, total_likes, total_comments, total_shares, date')
                     .order('date', { ascending: false })
                     .limit(1);
 
-                const { data: yesterdayData } = await supabase
-                    .rpc('aggregate_metrics_yesterday');
+                if (dailyError) {
+                    console.warn('metrics_daily_sum 오류:', dailyError.message);
+                    showKPIError('metrics_daily_sum 테이블 확인 필요');
+                    return;
+                }
 
                 if (dailyData && dailyData[0]) {
                     const today = dailyData[0];
@@ -116,60 +125,88 @@
                             <div class="kpi-label">Total Shares</div>
                         </div>
                     `;
+                    console.log('✅ KPI 로드 성공:', today);
+                } else {
+                    showKPIError('metrics_daily_sum 데이터 없음');
                 }
             } catch (error) {
                 console.error('KPI 로드 실패:', error);
+                showKPIError(error.message);
             }
         }
 
-        // 2. Top Channels 데이터 로드 (metrics_channel_7d 실제 테이블 사용)
+        function showKPIError(message) {
+            document.getElementById('kpiGrid').innerHTML = `
+                <div class="kpi-card" style="background: #fef2f2; color: #dc2626;">
+                    <div style="font-size: 1.5rem;">⚠️ KPI 데이터</div>
+                    <div style="font-size: 0.9rem; margin-top: 10px;">${message}</div>
+                </div>
+                <div class="kpi-card skeleton" style="height: 150px;"></div>
+                <div class="kpi-card skeleton" style="height: 150px;"></div>
+                <div class="kpi-card skeleton" style="height: 150px;"></div>
+            `;
+        }
+
+        // 2. Top Channels 데이터 로드 (실제 컬럼 구조 대응)
         async function loadTopChannels() {
             try {
+                document.getElementById('channelsContent').innerHTML = '<div class="loading">📊 metrics_channel_7d 테이블 확인 중...</div>';
+
+                // 먼저 테이블 구조 확인
+                const { data: tableInfo, error: tableError } = await supabase
+                    .from('metrics_channel_7d')
+                    .select('*')
+                    .limit(1);
+
+                if (tableError) {
+                    console.error('metrics_channel_7d 테이블 오류:', tableError);
+                    document.getElementById('channelsContent').innerHTML = `
+                        <div class="error">
+                            ❌ metrics_channel_7d 테이블 없음<br>
+                            <small>SQL: CREATE TABLE metrics_channel_7d 확인</small>
+                        </div>
+                        <div class="debug">
+                            오류: ${tableError.message}<br>
+                            크론 작업: refresh_metrics_channel_7d 실행 필요
+                        </div>
+                    `;
+                    return;
+                }
+
+                // 전체 데이터 조회 (실제 컬럼 사용)
                 const { data: channels, error } = await supabase
                     .from('metrics_channel_7d')
-                    .select(`
-                        channel_name,
-                        metric_value,
-                        views_7d,
-                        likes_7d,
-                        comments_7d,
-                        shares_7d,
-                        trend_change
-                    `)
+                    .select('*')
                     .order('metric_value', { ascending: false })
                     .limit(12);
 
                 if (error) throw error;
 
-                const lastUpdated = new Date().toLocaleString('ko-KR', {
-                    year: 'numeric', month: 'short', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                });
+                const lastUpdated = new Date().toLocaleString('ko-KR');
                 document.getElementById('lastUpdated').textContent = `최종 업데이트: ${lastUpdated}`;
 
                 if (channels && channels.length > 0) {
+                    console.log('✅ 채널 데이터:', channels[0]); // 첫 번째 행 구조 확인
+                    
                     const channelsHtml = channels.map((channel, index) => {
                         const rank = index + 1;
                         const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
-                        const changeClass = channel.trend_change > 0 ? 'change-positive' : 'change-negative';
                         
                         return `
                             <div class="channel-card ${rankClass}">
                                 <div class="rank-badge">${rank}</div>
-                                <div class="channel-name">${channel.channel_name}</div>
+                                <div class="channel-name">${channel.channel_name || 'N/A'}</div>
                                 <div class="metrics-row">
                                     <span class="metric-label">Score</span>
                                     <span class="metric-value">${channel.metric_value?.toLocaleString() || 0}</span>
                                 </div>
                                 <div class="metrics-row">
                                     <span class="metric-label">Views</span>
-                                    <span class="metric-value">${channel.views_7d?.toLocaleString() || 0}</span>
+                                    <span class="metric-value">${channel.views_7d?.toLocaleString() || channel.views?.toLocaleString() || 0}</span>
                                 </div>
                                 <div class="metrics-row">
                                     <span class="metric-label">Trend</span>
-                                    <span class="metric-value ${changeClass}">
-                                        ${channel.trend_change ? (channel.trend_change > 0 ? '+' : '') + channel.trend_change.toFixed(1) + '%' : '0%'}
-                                    </span>
+                                    <span class="metric-value">${channel.trend_change ? (channel.trend_change > 0 ? '+' : '') + channel.trend_change.toFixed(1) + '%' : '0%'}</span>
                                 </div>
                             </div>
                         `;
@@ -177,33 +214,38 @@
                     
                     document.getElementById('channelsContent').innerHTML = `<div class="channels-grid">${channelsHtml}</div>`;
                 } else {
-                    document.getElementById('channelsContent').innerHTML = '<div style="text-align:center;padding:60px;color:#666;">7일 채널 데이터가 없습니다. 크론 작업을 확인해주세요.</div>';
+                    document.getElementById('channelsContent').innerHTML = `
+                        <div style="text-align:center;padding:60px;color:#666;">
+                            📊 7일 채널 데이터 준비 중...<br>
+                            <small>크론 작업 실행 후 새로고침</small>
+                        </div>
+                    `;
                 }
             } catch (error) {
                 console.error('Top Channels 로드 실패:', error);
                 document.getElementById('channelsContent').innerHTML = `
                     <div class="error">
-                        ❌ 데이터 로드 실패: ${error.message}<br>
-                        <small>metrics_channel_7d 테이블과 refresh_metrics_channel_7d 함수를 확인해주세요.</small>
+                        ❌ ${error.message}<br>
+                        <small>1. 테이블 존재 확인<br>2. refresh_metrics_channel_7d 함수 실행</small>
                     </div>
                 `;
             }
         }
 
-        // 3. 페이지 로드시 모든 데이터 로드 + 5분마다 자동 갱신
+        // 3. 초기화 및 자동 갱신
         window.addEventListener('load', async () => {
+            console.log('🚀 대시보드 시작');
             await Promise.all([loadKPIs(), loadTopChannels()]);
             
-            // 5분마다 자동 갱신
+            // 5분마다 갱신
             setInterval(async () => {
+                console.log('🔄 자동 갱신');
                 await Promise.all([loadKPIs(), loadTopChannels()]);
             }, 5 * 60 * 1000);
         });
 
-        // PWA 지원 (기존 v2 유지)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js');
-        }
+        // 콘솔 디버깅
+        console.log('🔧 브라우저 콘솔(F12)에서 오류 확인 가능');
     </script>
 </body>
 </html>
