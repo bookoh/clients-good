@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <title>BSBKTV Audience Control Room v2</title>
+  <title>BSBKTV Audience Control Room</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -51,14 +51,6 @@
     .timestamp {
       font-size: 11px;
       color: #6b7280;
-    }
-    .version-badge {
-      font-size: 9px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(34,197,94,0.2);
-      border: 1px solid rgba(34,197,94,0.4);
-      color: #22c55e;
     }
 
     .pill {
@@ -128,32 +120,6 @@
       border-color: rgba(249,115,22,0.5);
     }
 
-    .controls-row {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-    }
-    .control-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .control-label {
-      font-size: 10px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    .period-select, .device-select {
-      border-radius: 999px;
-      background: rgba(15,23,42,0.9);
-      color: #e5e7eb;
-      border: 1px solid rgba(148,163,184,0.5);
-      padding: 6px 12px;
-      font-size: 12px;
-    }
-
     .client-row {
       display: flex;
       align-items: center;
@@ -183,24 +149,6 @@
       background: rgba(15,23,42,0.8);
       border: 1px solid rgba(148,163,184,0.4);
       color: #9ca3af;
-    }
-    .badge-green { background: rgba(34,197,94,0.2); color: #22c55e; border-color: rgba(34,197,94,0.4); }
-    .badge-orange { background: rgba(249,115,22,0.2); color: #f97316; border-color: rgba(249,115,22,0.4); }
-
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-    .metric-card {
-      background: radial-gradient(circle at top left, rgba(37,99,235,0.26), rgba(15,23,42,0.95));
-    }
-    .metric-card.bounce {
-      background: radial-gradient(circle at top left, rgba(59,130,246,0.35), rgba(15,23,42,0.96));
-    }
-    .metric-card.conversion {
-      background: radial-gradient(circle at top left, rgba(249,115,22,0.3), rgba(15,23,42,0.96));
     }
 
     table {
@@ -243,30 +191,10 @@
       100% { background-position: -200% 0; }
     }
 
-    .error-message {
-      color: #f97316;
-      font-size: 11px;
-      padding: 8px;
-      background: rgba(249,115,22,0.1);
-      border: 1px solid rgba(249,115,22,0.3);
-      border-radius: 8px;
-      margin: 8px 0;
-    }
-
     footer {
       margin-top: 18px;
       font-size: 9px;
       color: #4b5563;
-    }
-
-    @media (max-width: 768px) {
-      .metrics-grid {
-        grid-template-columns: 1fr;
-      }
-      .controls-row {
-        flex-direction: column;
-        align-items: stretch;
-      }
     }
   </style>
 </head>
@@ -277,36 +205,14 @@
         <div class="logo-circle">BS</div>
         <div>
           <div class="logo-text-main">BSBKTV</div>
-          <div class="logo-text-sub">AUDIENCE CONTROL ROOM v2</div>
+          <div class="logo-text-sub">AUDIENCE CONTROL ROOM</div>
         </div>
       </div>
-      <div>
-        <div class="timestamp" id="top-date"></div>
-        <div class="version-badge">V2.0</div>
-      </div>
+      <div class="timestamp" id="top-date"></div>
     </header>
 
     <div style="margin-bottom:18px;">
       <span class="pill">Realtime client report · Supabase</span>
-    </div>
-
-    <div class="controls-row">
-      <div class="control-group">
-        <span class="control-label">Period</span>
-        <select id="period-select" class="period-select">
-          <option value="7">7일</option>
-          <option value="30" selected>30일</option>
-          <option value="today">오늘</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <span class="control-label">Device</span>
-        <select id="device-select" class="period-select">
-          <option value="all" selected>전체</option>
-          <option value="mobile">모바일</option>
-          <option value="desktop">데스크톱</option>
-        </select>
-      </div>
     </div>
 
     <section style="margin-bottom:18px;">
@@ -316,18 +222,20 @@
           <select id="client-select" class="client-select">
             <option>Loading…</option>
           </select>
-          <span class="badge-small badge-green">LIVE</span>
+          <span class="badge-small">LIVE</span>
         </div>
         <div class="client-url" id="client-url"></div>
-        <div id="client-error" class="error-message" style="display:none;"></div>
       </div>
     </section>
 
-    <section class="metrics-grid">
-      <div class="card metric-card">
+    <section style="margin-bottom:12px;">
+      <div class="section-title">Sessions</div>
+      <div class="card">
         <div class="card-header">
-          <div><div class="card-title">Sessions</div></div>
-          <span class="badge-small" id="sessions-period">vs 직전 기간</span>
+          <div>
+            <div class="card-title">Sessions · 최근 7일</div>
+          </div>
+          <span class="badge-small">vs 직전 7일</span>
         </div>
         <div>
           <div class="kpi-main" id="sessions-value"><span class="skeleton"></span></div>
@@ -337,25 +245,16 @@
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="card metric-card bounce">
+    <section style="margin-bottom:12px;">
+      <div class="section-title">Pageviews</div>
+      <div class="card">
         <div class="card-header">
-          <div><div class="card-title">Bounce Rate</div></div>
-          <span class="badge-small" id="bounce-period">vs 직전 기간</span>
-        </div>
-        <div>
-          <div class="kpi-main" id="bounce-value"><span class="skeleton"></span></div>
-          <div class="kpi-sub">이탈률 평균</div>
-          <div style="margin-top:8px;">
-            <span id="bounce-delta" class="kpi-delta"><span class="skeleton small"></span></span>
+          <div>
+            <div class="card-title">Pageviews · 최근 7일</div>
           </div>
-        </div>
-      </div>
-
-      <div class="card metric-card">
-        <div class="card-header">
-          <div><div class="card-title">Pageviews</div></div>
-          <span class="badge-small" id="pageviews-period">vs 직전 기간</span>
+          <span class="badge-small">vs 직전 7일</span>
         </div>
         <div>
           <div class="kpi-main" id="pageviews-value"><span class="skeleton"></span></div>
@@ -365,32 +264,17 @@
           </div>
         </div>
       </div>
-
-      <div class="card metric-card conversion">
-        <div class="card-header">
-          <div><div class="card-title">Avg Pages/Session</div></div>
-          <span class="badge-small" id="pages-period">vs 직전 기간</span>
-        </div>
-        <div>
-          <div class="kpi-main" id="pages-value"><span class="skeleton"></span></div>
-          <div class="kpi-sub">세션당 페이지 평균</div>
-          <div style="margin-top:8px;">
-            <span id="pages-delta" class="kpi-delta"><span class="skeleton small"></span></span>
-          </div>
-        </div>
-      </div>
     </section>
 
     <section style="margin-bottom:12px;">
       <div class="section-title">Top channels</div>
       <div class="card">
         <div class="card-header">
-          <div class="card-title">채널별 세션 (선택 기간)</div>
+          <div class="card-title">최근 7일 채널별 세션</div>
         </div>
         <div id="channels-body" style="font-size:11px; color:#9ca3af;">
           <span class="skeleton row"></span>
         </div>
-        <div id="channels-error" class="error-message" style="display:none;"></div>
       </div>
     </section>
 
@@ -398,8 +282,8 @@
       <div class="section-title">Daily traffic log</div>
       <div class="card" style="background: radial-gradient(circle at top left, rgba(59,130,246,0.35), rgba(15,23,42,0.96));">
         <div class="card-header">
-          <div class="card-title">선택 기간 일자별 기록</div>
-          <span class="badge-small" id="range-label">Loading…</span>
+          <div class="card-title">최근 30일 일자별 세션·페이지뷰 기록</div>
+          <span class="badge-small" id="range-label">최근 30일</span>
         </div>
         <div style="overflow-x:auto;">
           <table>
@@ -408,34 +292,31 @@
                 <th>날짜</th>
                 <th>세션</th>
                 <th>페이지뷰</th>
-                <th>이탈률</th>
-                <th>페이지/세션</th>
               </tr>
             </thead>
             <tbody id="daily-body">
-              <tr><td colspan="5"><span class="skeleton row"></span></td></tr>
+              <tr>
+                <td colspan="3"><span class="skeleton row"></span></td>
+              </tr>
             </tbody>
           </table>
         </div>
-        <div id="daily-error" class="error-message" style="display:none;"></div>
       </div>
     </section>
 
     <footer>
-      © 2025 BSBKTV · All rights reserved. LIVE 데이터는 Supabase Analytics 테이블 기준.
+      © 2025 BSBKTV · All rights reserved. LIVE 데이터는 Supabase Analytics 테이블 기준이며, 내부 참고용입니다.
     </footer>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = '여기에 Project URL';
-    const SUPABASE_KEY = '여기에 anon public key';
+    const { createClient } = supabase;
 
-    let sb = null;
-    let currentClientId = null;
-    let clientsCache = [];
-    let currentPeriod = '30';
-    let currentDevice = 'all';
+    const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
+
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     document.getElementById('top-date').textContent =
       new Date().toLocaleString('ko-KR', {
@@ -443,294 +324,235 @@
         hour: '2-digit', minute: '2-digit'
       });
 
-    function showError(id, message) {
-      const el = document.getElementById(id);
-      el.textContent = message;
-      el.style.display = 'block';
-    }
-
-    function hideError(id) {
-      const el = document.getElementById(id);
-      el.style.display = 'none';
-    }
+    let currentClientId = null;
+    let clientsCache = [];
 
     function formatNumber(n) {
-      if (n === null || n === undefined || n === 0) return '-';
+      if (n === null || n === undefined) return '-';
       return n.toLocaleString('ko-KR');
     }
 
-    function formatPercent(p) {
-      if (p === null || p === undefined || p === 0) return '-';
-      return p.toFixed(1) + '%';
-    }
-
     function computeDelta(current, previous) {
-      if (!previous || previous === 0 || current === null || current === 0) {
-        return { label: '비교 데이터 없음', cls: 'kpi-delta' };
+      if (!previous || previous === 0 || current === null) {
+        return { label: '이전 기간 데이터 없음', cls: 'kpi-delta' };
       }
       const diff = current - previous;
-      const pct = (diff / previous) * 100;
+      const pct = previous === 0 ? 0 : (diff / previous) * 100;
       const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
-      const cls = diff > 0 ? 'kpi-delta positive' : diff < 0 ? 'kpi-delta negative' : 'kpi-delta';
-      const label = `${sign}${Math.abs(diff).toLocaleString('ko-KR')} (${sign}${Math.abs(pct).toFixed(1)}%)`;
+      const cls =
+        diff > 0 ? 'kpi-delta positive' :
+        diff < 0 ? 'kpi-delta negative' :
+        'kpi-delta';
+      const label = `${sign}${Math.abs(diff)} (${sign}${Math.abs(pct).toFixed(1)}%) vs 직전 7일`;
       return { label, cls };
     }
 
     function setLoadingState() {
-      ['sessions-value', 'pageviews-value', 'bounce-value', 'pages-value'].forEach(id => {
-        document.getElementById(id).innerHTML = '<span class="skeleton"></span>';
-      });
-      ['sessions-delta', 'pageviews-delta', 'bounce-delta', 'pages-delta'].forEach(id => {
-        document.getElementById(id).innerHTML = '<span class="skeleton small"></span>';
-      });
-      document.getElementById('daily-body').innerHTML = '<tr><td colspan="5"><span class="skeleton row"></span></td></tr>';
-      document.getElementById('channels-body').innerHTML = '<span class="skeleton row"></span>';
-      
-      hideError('client-error');
-      hideError('channels-error');
-      hideError('daily-error');
+      document.getElementById('sessions-value').innerHTML =
+        '<span class="skeleton"></span>';
+      document.getElementById('pageviews-value').innerHTML =
+        '<span class="skeleton"></span>';
+      document.getElementById('sessions-delta').innerHTML =
+        '<span class="skeleton small"></span>';
+      document.getElementById('pageviews-delta').innerHTML =
+        '<span class="skeleton small"></span>';
+      document.getElementById('daily-body').innerHTML =
+        '<tr><td colspan="3"><span class="skeleton row"></span></td></tr>';
+      document.getElementById('channels-body').innerHTML =
+        '<span class="skeleton row"></span>';
     }
 
-    async function loadSummaryMetrics() {
-      if (!currentClientId || !sb) return;
+    async function loadWeeklySummary() {
+      if (!currentClientId) return;
 
-      try {
-        const now = new Date();
-        let periodDays = currentPeriod === 'today' ? 1 : parseInt(currentPeriod);
-        const periodStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
-        const prevStart = new Date(now.getTime() - periodDays * 2 * 24 * 60 * 60 * 1000);
-        const prevEnd = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-        // v1 호환: 기존 metrics_daily_sum 사용
-        const { data: recent, error: recentError } = await sb
-          .from('metrics_daily_sum')
-          .select('sessions,pageviews,date')
-          .eq('client_id', currentClientId)
-          .gte('date', periodStart.toISOString().slice(0,10))
-          .order('date');
+      const { data: recent, error: recentError } = await sb
+        .from('metrics_daily_sum')
+        .select('sessions,pageviews,date')
+        .eq('client_id', currentClientId)
+        .gte('date', sevenDaysAgo.toISOString().slice(0,10));
 
-        if (recentError) throw recentError;
-
-        const { data: previous, error: prevError } = await sb
-          .from('metrics_daily_sum')
-          .select('sessions,pageviews,date')
-          .eq('client_id', currentClientId)
-          .gte('date', prevStart.toISOString().slice(0,10))
-          .lt('date', prevEnd.toISOString().slice(0,10));
-
-        if (prevError) throw prevError;
-
-        const recentSessions = (recent || []).reduce((s, r) => s + (r.sessions || 0), 0);
-        const recentPageviews = (recent || []).reduce((s, r) => s + (r.pageviews || 0), 0);
-
-        document.getElementById('sessions-value').textContent = formatNumber(recentSessions);
-        document.getElementById('pageviews-value').textContent = formatNumber(recentPageviews);
-        
-        // Bounce와 Pages/Session은 임시 계산 (실제 데이터가 없으면 기본값)
-        document.getElementById('bounce-value').textContent = '45.2%';
-        document.getElementById('pages-value').textContent = '2.1';
-
-        const prevSessions = (previous || []).reduce((s, r) => s + (r.sessions || 0), 0);
-        const prevPageviews = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
-
-        const sDelta = computeDelta(recentSessions, prevSessions);
-        const pDelta = computeDelta(recentPageviews, prevPageviews);
-
-        document.getElementById('sessions-delta').className = sDelta.cls;
-        document.getElementById('sessions-delta').textContent = sDelta.label;
-        document.getElementById('pageviews-delta').className = pDelta.cls;
-        document.getElementById('pageviews-delta').textContent = pDelta.label;
-
-        document.getElementById('bounce-delta').textContent = '+2.1%';
-        document.getElementById('bounce-delta').className = 'kpi-delta negative';
-        document.getElementById('pages-delta').textContent = '-0.3';
-        document.getElementById('pages-delta').className = 'kpi-delta negative';
-
-        const periodText = currentPeriod === 'today' ? 'vs 어제' : `vs 직전 ${currentPeriod}일`;
-        ['sessions-period', 'pageviews-period', 'bounce-period', 'pages-period'].forEach(id => {
-          document.getElementById(id).textContent = periodText;
-        });
-
-      } catch (error) {
-        console.error('Summary metrics error:', error);
-        document.getElementById('sessions-value').textContent = '에러';
-        document.getElementById('pageviews-value').textContent = '에러';
+      if (recentError) {
+        alert('WEEKLY RECENT ERROR: ' + (recentError.message || JSON.stringify(recentError)));
+        return;
       }
+
+      const { data: previous, error: previousError } = await sb
+        .from('metrics_daily_sum')
+        .select('sessions,pageviews,date')
+        .eq('client_id', currentClientId)
+        .gte('date', fourteenDaysAgo.toISOString().slice(0,10))
+        .lt('date', sevenDaysAgo.toISOString().slice(0,10));
+
+      if (previousError) {
+        alert('WEEKLY PREV ERROR: ' + (previousError.message || JSON.stringify(previousError)));
+        return;
+      }
+
+      const recentSessions = (recent || []).reduce((s, r) => s + (r.sessions || 0), 0);
+      const recentPageviews = (recent || []).reduce((s, r) => s + (r.pageviews || 0), 0);
+      const prevSessions = (previous || []).reduce((s, r) => s + (r.sessions || 0), 0);
+      const prevPageviews = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
+
+      const sessionsValueEl = document.getElementById('sessions-value');
+      const pageviewsValueEl = document.getElementById('pageviews-value');
+      const sessionsDeltaEl = document.getElementById('sessions-delta');
+      const pageviewsDeltaEl = document.getElementById('pageviews-delta');
+
+      sessionsValueEl.textContent = formatNumber(recentSessions);
+      pageviewsValueEl.textContent = formatNumber(recentPageviews);
+
+      const sDelta = computeDelta(recentSessions, prevSessions);
+      const pDelta = computeDelta(recentPageviews, prevPageviews);
+
+      sessionsDeltaEl.className = sDelta.cls;
+      sessionsDeltaEl.textContent = sDelta.label;
+      pageviewsDeltaEl.className = pDelta.cls;
+      pageviewsDeltaEl.textContent = pDelta.label;
     }
 
     async function loadDailyTable() {
-      if (!currentClientId || !sb) return;
+      if (!currentClientId) return;
 
-      try {
-        hideError('daily-error');
-        const days = currentPeriod === '7' ? 14 : currentPeriod === '30' ? 60 : 2;
-        const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const days = 30;
+      const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-        const { data, error } = await sb
-          .from('metrics_daily_sum')
-          .select('date,sessions,pageviews')
-          .eq('client_id', currentClientId)
-          .gte('date', start.toISOString().slice(0,10))
-          .order('date', { ascending: true });
+      const { data, error } = await sb
+        .from('metrics_daily_sum')
+        .select('date,sessions,pageviews')
+        .eq('client_id', currentClientId)
+        .gte('date', start.toISOString().slice(0,10))
+        .order('date', { ascending: true });
 
-        if (error) throw error;
+      const tbody = document.getElementById('daily-body');
 
-        const tbody = document.getElementById('daily-body');
-        const fmt = new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' });
-
-        if (!data || data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" style="color:#9ca3af;">데이터 없음</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = data.map(row => {
-          const d = new Date(row.date);
-          return `
-            <tr>
-              <td>${fmt.format(d)}</td>
-              <td>${formatNumber(row.sessions)}</td>
-              <td>${formatNumber(row.pageviews)}</td>
-              <td>45.2%</td>
-              <td>2.1</td>
-            </tr>
-          `;
-        }).join('');
-
-        const first = new Date(data[0].date);
-        const last = new Date(data[data.length - 1].date);
-        document.getElementById('range-label').textContent = 
-          `${fmt.format(first)} – ${fmt.format(last)}`;
-
-      } catch (error) {
-        console.error('Daily table error:', error);
-        showError('daily-error', '일별 데이터 로드 실패: ' + error.message);
+      if (error) {
+        alert('DAILY ERROR: ' + (error.message || JSON.stringify(error)));
+        tbody.innerHTML =
+          '<tr><td colspan="3" style="color:#f97316;">일별 데이터 로드 에러</td></tr>';
+        return;
       }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML =
+          '<tr><td colspan="3" style="color:#9ca3af;">최근 30일 데이터가 없습니다.</td></tr>';
+        document.getElementById('range-label').textContent = '최근 30일';
+        return;
+      }
+
+      const fmt = new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' });
+
+      tbody.innerHTML = data.map(row => {
+        const d = new Date(row.date);
+        return `
+          <tr>
+            <td>${fmt.format(d)}</td>
+            <td>${formatNumber(row.sessions)}</td>
+            <td>${formatNumber(row.pageviews)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const first = new Date(data[0].date);
+      const last = new Date(data[data.length - 1].date);
+      document.getElementById('range-label').textContent =
+        `${first.getMonth()+1}.${first.getDate()} – ${last.getMonth()+1}.${last.getDate()}`;
     }
 
-    async function loadChannels() {
-      if (!currentClientId || !sb) return;
+    async function loadChannels7d() {
+      if (!currentClientId) return;
 
-      try {
-        hideError('channels-error');
-        const body = document.getElementById('channels-body');
-        body.innerHTML = '<span class="skeleton row"></span>';
+      const body = document.getElementById('channels-body');
+      body.innerHTML = '<span class="skeleton row"></span>';
 
-        // v1 호환: 기존 metrics_channel_7d 사용 (기간 무시하고 7d만)
-        const { data, error } = await sb
-          .from('metrics_channel_7d')
-          .select('channel,sessions,pageviews')
-          .eq('client_id', currentClientId)
-          .order('sessions', { ascending: false });
+      const { data, error } = await sb
+        .from('metrics_channel_7d')
+        .select('channel,sessions,pageviews')
+        .eq('client_id', currentClientId)
+        .order('sessions', { ascending: false });
 
-        if (error) throw error;
+      if (error) {
+        body.innerHTML =
+          '<span style="color:#f97316;">채널 데이터 로드 에러</span>';
+        return;
+      }
 
-        if (!data || data.length === 0) {
-          body.innerHTML = '<span style="color:#9ca3af;">채널 데이터 없음</span>';
-          return;
-        }
+      if (!data || data.length === 0) {
+        body.innerHTML = '<span>최근 7일 채널 데이터가 없습니다.</span>';
+        return;
+      }
 
-        body.innerHTML = data.slice(0, 8).map(row => `
+      body.innerHTML = data.map(row => {
+        return `
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
             <span style="color:#e5e7eb;">${row.channel || '기타'}</span>
             <span>${formatNumber(row.sessions)}세션 · ${formatNumber(row.pageviews)}뷰</span>
           </div>
-        `).join('');
-
-      } catch (error) {
-        console.error('Channels error:', error);
-        showError('channels-error', '채널 데이터 로드 실패: ' + error.message);
-      }
+        `;
+      }).join('');
     }
 
     async function loadClients() {
       const selectEl = document.getElementById('client-select');
       const urlEl = document.getElementById('client-url');
 
-      try {
-        hideError('client-error');
-        const { data, error } = await sb
-          .from('clients')
-          .select('id,name,main_url')
-          .order('name', { ascending: true });
+      const { data, error } = await sb
+        .from('clients')
+        .select('id,name,main_url')
+        .order('name', { ascending: true });
 
-        if (error) throw error;
-
-        clientsCache = data || [];
-
-        if (!clientsCache.length) {
-          selectEl.innerHTML = '<option value="">클라이언트 없음</option>';
-          showError('client-error', 'clients 테이블에 데이터가 없습니다.');
-          return;
-        }
-
-        selectEl.innerHTML = clientsCache.map((c, idx) => `
-          <option value="${c.id}" ${idx === 0 ? 'selected' : ''}>${c.name}</option>
-        `).join('');
-
-        currentClientId = clientsCache[0].id;
-        urlEl.textContent = clientsCache[0].main_url || '';
-
-      } catch (error) {
-        console.error('Clients error:', error);
-        selectEl.innerHTML = '<option value="">로드 에러</option>';
-        showError('client-error', 'clients 테이블 로드 실패: ' + error.message);
+      if (error) {
+        alert('CLIENTS ERROR: ' + (error.message || JSON.stringify(error)));
+        selectEl.innerHTML = '<option value="">Load error</option>';
+        return;
       }
-    }
 
-    async function reloadAll() {
-      setLoadingState();
-      await Promise.all([
-        loadSummaryMetrics(),
-        loadDailyTable(),
-        loadChannels()
-      ]);
-    }
+      clientsCache = data || [];
 
-    // Init
-    async function init() {
-      try {
-        if (!SUPABASE_URL || SUPABASE_URL === 'https://mbzowtyucumxhibgvfyr.supabase.co' || 
-            !SUPABASE_KEY || SUPABASE_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4') {
-          throw new Error('Supabase URL과 KEY를 입력하세요');
-        }
+      if (!clientsCache.length) {
+        selectEl.innerHTML = '<option value="">No clients</option>';
+        return;
+      }
 
-        const { createClient } = supabase;
-        sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+      selectEl.innerHTML = clientsCache.map((c, idx) => `
+        <option value="${c.id}" ${idx === 0 ? 'selected' : ''}>
+          ${c.name}
+        </option>
+      `).join('');
+
+      currentClientId = clientsCache[0].id;
+      urlEl.textContent = clientsCache[0].main_url || '';
+
+      selectEl.addEventListener('change', async (e) => {
+        const id = e.target.value;
+        currentClientId = id || null;
+
+        const found = clientsCache.find(c => c.id === id);
+        urlEl.textContent = found?.main_url || '';
 
         setLoadingState();
-        await loadClients();
-        if (currentClientId) {
-          await reloadAll();
-        }
-
-      } catch (error) {
-        console.error('Init error:', error);
-        showError('client-error', '초기화 실패: ' + error.message);
-      }
+        await Promise.all([
+          loadWeeklySummary(),
+          loadDailyTable(),
+          loadChannels7d()
+        ]);
+      });
     }
 
-    // Event listeners
-    document.getElementById('client-select').addEventListener('change', async (e) => {
-      const id = e.target.value;
-      currentClientId = id || null;
-      const found = clientsCache.find(c => c.id === id);
-      document.getElementById('client-url').textContent = found?.main_url || '';
+    (async function init() {
+      setLoadingState();
+      await loadClients();
       if (currentClientId) {
-        await reloadAll();
+        await Promise.all([
+          loadWeeklySummary(),
+          loadDailyTable(),
+          loadChannels7d()
+        ]);
       }
-    });
-
-    document.getElementById('period-select').addEventListener('change', async (e) => {
-      currentPeriod = e.target.value;
-      if (currentClientId) await reloadAll();
-    });
-
-    document.getElementById('device-select').addEventListener('change', async (e) => {
-      currentDevice = e.target.value;
-      if (currentClientId) await reloadAll();
-    });
-
-    init();
+    })();
   </script>
 </body>
 </html>
