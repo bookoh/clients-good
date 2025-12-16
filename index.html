@@ -203,7 +203,7 @@
       </section>
     </div>
 
-    <!-- Top channels (7D, metrics_channel_7d 사용) -->
+    <!-- Top channels (7D) -->
     <section style="margin-bottom:12px;">
       <div class="section-title">Top channels (7D)</div>
       <div class="card">
@@ -249,7 +249,7 @@
     const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
 
-    const sb = createClient(SUPABASE_URL, SUPABASE_KEY); // [web:45][web:48]
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY); [web:42]
 
     document.getElementById('top-date').textContent =
       new Date().toLocaleString('ko-KR', {
