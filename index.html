@@ -242,276 +242,306 @@
     </footer>
   </div>
 
+  <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const { createClient } = supabase;
+  <script>
+    const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
+    const SUPABASE_KEY =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
+    document.getElementById('top-date').textContent =
+      new Date().toLocaleString('ko-KR', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
 
-  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+    let currentClientId = null;
+    let currentPeriod   = '7';
+    let currentDevice   = 'all';
+    let clientsCache    = [];
 
-  document.getElementById('top-date').textContent =
-    new Date().toLocaleString('ko-KR', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit'
-    });
+    function formatNumber(n) { return (n === null || n === undefined) ? '-' : n.toLocaleString('ko-KR'); }
+    function formatPercent(p) { return (p === null || p === undefined) ? '-' : p.toFixed(1) + '%'; }
 
-  let currentClientId = null;
-  let currentPeriod = '7';
-  let currentDevice = 'all';
-  let clientsCache = [];
-
-  function formatNumber(n) { return (n === null || n === undefined) ? '-' : n.toLocaleString('ko-KR'); }
-  function formatPercent(p) { return (p === null || p === undefined) ? '-' : p.toFixed(1) + '%'; }
-
-  function computeDelta(current, previous) {
-    if (!previous || current === null || current === undefined) {
-      return { label: '이전 기간 데이터 없음', cls: 'kpi-delta' };
-    }
-    const diff = current - previous;
-    const pct = (diff / previous) * 100;
-    const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
-    const cls =
-      diff > 0 ? 'kpi-delta positive' :
-      diff < 0 ? 'kpi-delta negative' :
-      'kpi-delta';
-    const label = `${sign}${Math.abs(diff).toFixed(0)} (${sign}${Math.abs(pct).toFixed(1)}%)`;
-    return { label, cls };
-  }
-
-  function setLoadingState() {
-    ['sessions-value','pageviews-value','bounce-value','pages-value'].forEach(id => {
-      document.getElementById(id).innerHTML = '<span class="skeleton"></span>';
-    });
-    ['sessions-delta','pageviews-delta','bounce-delta','pages-delta'].forEach(id => {
-      document.getElementById(id).innerHTML = '<span class="skeleton small"></span>';
-    });
-    document.getElementById('daily-body').innerHTML =
-      '<tr><td colspan="3"><span class="skeleton row"></span></td></tr>';
-    document.getElementById('channels-body').innerHTML =
-      '<span class="skeleton row"></span>';
-  }
-
-  function applyDeviceFilter(query) {
-    if (currentDevice === 'all') return query;
-    return query.eq('device', currentDevice);
-  }
-
-  // KPI 요약
-  async function loadSummary() {
-    if (!currentClientId) return;
-
-    const now = new Date();
-    const periodDays = parseInt(currentPeriod, 10);
-    const startDate = new Date(now.getTime() - periodDays * 86400000);
-    const prevStartDate = new Date(now.getTime() - periodDays * 2 * 86400000);
-    const prevEndDate = new Date(now.getTime() - periodDays * 86400000);
-
-    let recentQuery = sb
-      .from('metrics_daily_sum')
-      .select('sessions,pageviews,bounces,entrances')
-      .eq('client_id', currentClientId)
-      .gte('date', startDate.toISOString().slice(0,10));
-
-    let prevQuery = sb
-      .from('metrics_daily_sum')
-      .select('sessions,pageviews,bounces,entrances')
-      .eq('client_id', currentClientId)
-      .gte('date', prevStartDate.toISOString().slice(0,10))
-      .lt('date', prevEndDate.toISOString().slice(0,10));
-
-    recentQuery = applyDeviceFilter(recentQuery);
-    prevQuery   = applyDeviceFilter(prevQuery);
-
-    const { data: recent,  error: recentError } = await recentQuery;
-    const { data: previous, error: prevError } = await prevQuery;
-
-    if (recentError) console.error('loadSummary recent error:', recentError);
-    if (prevError)   console.error('loadSummary prev error:', prevError);
-
-    const recentSessions  = (recent || []).reduce((s, r) => s + (r.sessions  || 0), 0);
-    const recentPageviews = (recent || []).reduce((s, r) => s + (r.pageviews || 0), 0);
-    const recentBounces   = (recent || []).reduce((s, r) => s + (r.bounces   || 0), 0);
-
-    const prevSessions  = (previous || []).reduce((s, r) => s + (r.sessions  || 0), 0);
-    const prevPageviews = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
-    const prevBounces   = (previous || []).reduce((s, r) => s + (r.bounces   || 0), 0);
-
-    document.getElementById('sessions-value').textContent  = formatNumber(recentSessions);
-    document.getElementById('pageviews-value').textContent = formatNumber(recentPageviews);
-
-    const bounceRate      = recentSessions > 0 ? (recentBounces / recentSessions) * 100 : 0;
-    const pagesPerSession = recentSessions > 0 ? (recentPageviews / recentSessions) : 0;
-
-    document.getElementById('bounce-value').textContent = formatPercent(bounceRate);
-    document.getElementById('pages-value').textContent  = pagesPerSession.toFixed(1);
-
-    const sDelta = computeDelta(recentSessions,  prevSessions);
-    const pDelta = computeDelta(recentPageviews, prevPageviews);
-    const bDelta = computeDelta(
-      bounceRate,
-      prevSessions > 0 ? (prevBounces / prevSessions) * 100 : null
-    );
-    const pagesDelta = computeDelta(
-      pagesPerSession,
-      prevSessions > 0 ? prevPageviews / prevSessions : null
-    );
-
-    document.getElementById('sessions-delta').className  = sDelta.cls;
-    document.getElementById('sessions-delta').textContent  = sDelta.label;
-    document.getElementById('pageviews-delta').className = pDelta.cls;
-    document.getElementById('pageviews-delta').textContent = pDelta.label;
-    document.getElementById('bounce-delta').className    = bDelta.cls;
-    document.getElementById('bounce-delta').textContent    = bDelta.label;
-    document.getElementById('pages-delta').className     = pagesDelta.cls;
-    document.getElementById('pages-delta').textContent     = pagesDelta.label;
-
-    document.getElementById('period-label').textContent =
-      periodDays === 1 ? '오늘' : `최근 ${periodDays}일`;
-  }
-
-  // Daily 테이블
-  async function loadDailyTable() {
-    if (!currentClientId) return;
-
-    const days = parseInt(currentPeriod, 10);
-    const start = new Date(Date.now() - days * 86400000);
-
-    let query = sb
-      .from('metrics_daily_sum')
-      .select('date,sessions,pageviews')
-      .eq('client_id', currentClientId)
-      .gte('date', start.toISOString().slice(0,10))
-      .order('date', { ascending: true });
-
-    query = applyDeviceFilter(query);
-
-    const { data, error } = await query;
-    const tbody = document.getElementById('daily-body');
-
-    if (error) {
-      console.error('loadDailyTable error:', error);
-      tbody.innerHTML = '<tr><td colspan="3" style="color:#f97316;">데이터 로드 에러</td></tr>';
-      document.getElementById('range-label').textContent = 'Error';
-      return;
+    function computeDelta(current, previous) {
+      if (!previous || current === null || current === undefined) {
+        return { label: '이전 기간 데이터 없음', cls: 'kpi-delta' };
+      }
+      const diff = current - previous;
+      const pct  = (diff / previous) * 100;
+      const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
+      const cls =
+        diff > 0 ? 'kpi-delta positive' :
+        diff < 0 ? 'kpi-delta negative' :
+        'kpi-delta';
+      const label = `${sign}${Math.abs(diff).toFixed(0)} (${sign}${Math.abs(pct).toFixed(1)}%)`;
+      return { label, cls };
     }
 
-    if (!data || !data.length) {
-      tbody.innerHTML = '<tr><td colspan="3" style="color:#9ca3af;">선택 기간 데이터가 없습니다.</td></tr>';
-      document.getElementById('range-label').textContent = 'No data';
-      return;
+    function setLoadingState() {
+      ['sessions-value','pageviews-value','bounce-value','pages-value'].forEach(id => {
+        document.getElementById(id).innerHTML = '<span class="skeleton"></span>';
+      });
+      ['sessions-delta','pageviews-delta','bounce-delta','pages-delta'].forEach(id => {
+        document.getElementById(id).innerHTML = '<span class="skeleton small"></span>';
+      });
+      document.getElementById('daily-body').innerHTML =
+        '<tr><td colspan="3"><span class="skeleton row"></span></td></tr>';
+      document.getElementById('channels-body').innerHTML =
+        '<span class="skeleton row"></span>';
     }
 
-    const fmt = new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' });
-
-    tbody.innerHTML = data.map(row => {
-      const d = new Date(row.date);
-      return `
-        <tr>
-          <td>${fmt.format(d)}</td>
-          <td>${formatNumber(row.sessions)}</td>
-          <td>${formatNumber(row.pageviews)}</td>
-        </tr>
-      `;
-    }).join('');
-
-    const first = new Date(data[0].date);
-    const last  = new Date(data[data.length - 1].date);
-    document.getElementById('range-label').textContent =
-      `${fmt.format(first)} – ${fmt.format(last)}`;
-  }
-
-  // Top channels (metrics_channel_7d)
-  async function loadChannels() {
-    if (!currentClientId) return;
-
-    const body = document.getElementById('channels-body');
-    body.innerHTML = '<span class="skeleton row"></span>';
-
-    const { data, error } = await sb
-      .from('metrics_channel_7d')
-      .select('channel,sessions,pageviews')
-      .eq('client_id', currentClientId)
-      .order('sessions', { ascending: false });
-
-    if (error) {
-      console.error('loadChannels error:', error);
-      body.innerHTML = '<span style="color:#f97316;">채널 데이터 로드 에러</span>';
-      return;
+    function applyDeviceFilter(query) {
+      if (currentDevice === 'all') return query;
+      return query.eq('device', currentDevice);
     }
 
-    if (!data || !data.length) {
-      body.innerHTML = '<span>최근 7일 채널 데이터가 없습니다.</span>';
-      return;
+    async function loadSummary() {
+      if (!currentClientId) return;
+
+      const now        = new Date();
+      const periodDays = parseInt(currentPeriod, 10);
+      const startDate  = new Date(now.getTime() - periodDays * 86400000);
+      const prevStart  = new Date(now.getTime() - periodDays * 2 * 86400000);
+      const prevEnd    = new Date(now.getTime() - periodDays * 86400000);
+
+      let recentQuery = sb
+        .from('metrics_daily_sum')
+        .select('sessions,pageviews,bounces,entrances')
+        .eq('client_id', currentClientId)
+        .gte('date', startDate.toISOString().slice(0,10));
+
+      let prevQuery = sb
+        .from('metrics_daily_sum')
+        .select('sessions,pageviews,bounces,entrances')
+        .eq('client_id', currentClientId)
+        .gte('date', prevStart.toISOString().slice(0,10))
+        .lt('date',  prevEnd.toISOString().slice(0,10));
+
+      recentQuery = applyDeviceFilter(recentQuery);
+      prevQuery   = applyDeviceFilter(prevQuery);
+
+      const { data: recent,  error: recentError } = await recentQuery;
+      const { data: previous, error: prevError   } = await prevQuery;
+
+      if (recentError) console.error('loadSummary recent error:', recentError);
+      if (prevError)   console.error('loadSummary prev error:', prevError);
+
+      const recentSessions  = (recent   || []).reduce((s, r) => s + (r.sessions  || 0), 0);
+      const recentPageviews = (recent   || []).reduce((s, r) => s + (r.pageviews || 0), 0);
+      const recentBounces   = (recent   || []).reduce((s, r) => s + (r.bounces   || 0), 0);
+      const prevSessions    = (previous || []).reduce((s, r) => s + (r.sessions  || 0), 0);
+      const prevPageviews   = (previous || []).reduce((s, r) => s + (r.pageviews || 0), 0);
+      const prevBounces     = (previous || []).reduce((s, r) => s + (r.bounces   || 0), 0);
+
+      document.getElementById('sessions-value').textContent  = formatNumber(recentSessions);
+      document.getElementById('pageviews-value').textContent = formatNumber(recentPageviews);
+
+      const bounceRate      = recentSessions > 0 ? (recentBounces / recentSessions) * 100 : 0;
+      const pagesPerSession = recentSessions > 0 ? (recentPageviews / recentSessions) : 0;
+
+      document.getElementById('bounce-value').textContent = formatPercent(bounceRate);
+      document.getElementById('pages-value').textContent  = pagesPerSession.toFixed(1);
+
+      const sDelta     = computeDelta(recentSessions,  prevSessions);
+      const pDelta     = computeDelta(recentPageviews, prevPageviews);
+      const bDelta     = computeDelta(
+        bounceRate,
+        prevSessions > 0 ? (prevBounces / prevSessions) * 100 : null
+      );
+      const pagesDelta = computeDelta(
+        pagesPerSession,
+        prevSessions > 0 ? prevPageviews / prevSessions : null
+      );
+
+      document.getElementById('sessions-delta').className   = sDelta.cls;
+      document.getElementById('sessions-delta').textContent = sDelta.label;
+      document.getElementById('pageviews-delta').className  = pDelta.cls;
+      document.getElementById('pageviews-delta').textContent= pDelta.label;
+      document.getElementById('bounce-delta').className     = bDelta.cls;
+      document.getElementById('bounce-delta').textContent   = bDelta.label;
+      document.getElementById('pages-delta').className      = pagesDelta.cls;
+      document.getElementById('pages-delta').textContent    = pagesDelta.label;
+
+      document.getElementById('period-label').textContent =
+        periodDays === 1 ? '오늘' : `최근 ${periodDays}일`;
     }
 
-    body.innerHTML = data.slice(0, 5).map(row => `
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <span style="color:#e5e7eb;">${row.channel || '기타'}</span>
-        <span>${formatNumber(row.sessions)}세션 · ${formatNumber(row.pageviews)}뷰</span>
-      </div>
-    `).join('');
-  }
+    async function loadDailyTable() {
+      if (!currentClientId) return;
 
-  // Client 목록
-  async function loadClients() {
-    const selectEl = document.getElementById('client-select');
-    const urlEl = document.getElementById('client-url');
+      const days  = parseInt(currentPeriod, 10);
+      const start = new Date(Date.now() - days * 86400000);
 
-    const { data, error } = await sb
-      .from('clients')
-      .select('id,name,main_url')
-      .order('name', { ascending: true });
+      let query = sb
+        .from('metrics_daily_sum')
+        .select('date,sessions,pageviews')
+        .eq('client_id', currentClientId)
+        .gte('date', start.toISOString().slice(0,10))
+        .order('date', { ascending: true });
 
-    if (error) {
-      console.error('loadClients error:', error);
-      selectEl.innerHTML = '<option value="">Load error</option>';
-      return;
+      query = applyDeviceFilter(query);
+
+      const { data, error } = await query;
+      const tbody = document.getElementById('daily-body');
+
+      if (error) {
+        console.error('loadDailyTable error:', error);
+        tbody.innerHTML = '<tr><td colspan="3" style="color:#f97316;">데이터 로드 에러</td></tr>';
+        document.getElementById('range-label').textContent = 'Error';
+        return;
+      }
+
+      if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="color:#9ca3af;">선택 기간 데이터가 없습니다.</td></tr>';
+        document.getElementById('range-label').textContent = 'No data';
+        return;
+      }
+
+      const fmt = new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' });
+
+      tbody.innerHTML = data.map(row => {
+        const d = new Date(row.date);
+        return `
+          <tr>
+            <td>${fmt.format(d)}</td>
+            <td>${formatNumber(row.sessions)}</td>
+            <td>${formatNumber(row.pageviews)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const first = new Date(data[0].date);
+      const last  = new Date(data[data.length - 1].date);
+      document.getElementById('range-label').textContent =
+        `${fmt.format(first)} – ${fmt.format(last)}`;
     }
 
-    clientsCache = data || [];
-    if (!clientsCache.length) {
-      selectEl.innerHTML = '<option value="">No clients</option>';
-      return;
+    async function loadChannels() {
+      if (!currentClientId) return;
+
+      const body = document.getElementById('channels-body');
+      body.innerHTML = '<span class="skeleton row"></span>';
+
+      const { data, error } = await sb
+        .from('metrics_channel_7d')
+        .select('channel,sessions,pageviews')
+        .eq('client_id', currentClientId)
+        .order('sessions', { ascending: false });
+
+      if (error) {
+        console.error('loadChannels error:', error);
+        body.innerHTML = '<span style="color:#f97316;">채널 데이터 로드 에러</span>';
+        return;
+      }
+
+      if (!data || !data.length) {
+        body.innerHTML = '<span>최근 7일 채널 데이터가 없습니다.</span>';
+        return;
+      }
+
+      body.innerHTML = data.slice(0, 5).map(row => `
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="color:#e5e7eb;">${row.channel || '기타'}</span>
+          <span>${formatNumber(row.sessions)}세션 · ${formatNumber(row.pageviews)}뷰</span>
+        </div>
+      `).join('');
     }
 
-    selectEl.innerHTML = clientsCache.map((c, idx) => `
-      <option value="${c.id}" ${idx === 0 ? 'selected' : ''}>${c.name}</option>
-    `).join('');
+    async function loadClients() {
+      const selectEl = document.getElementById('client-select');
+      const urlEl    = document.getElementById('client-url');
 
-    currentClientId = clientsCache[0].id;
-    urlEl.textContent = clientsCache[0].main_url || '';
-  }
+      const { data, error } = await sb
+        .from('clients')
+        .select('id,name,main_url')
+        .order('name', { ascending: true });
 
-  async function refreshAll() {
-    setLoadingState();
-    await Promise.all([loadSummary(), loadDailyTable(), loadChannels()]);
-  }
+      if (error) {
+        console.error('loadClients error:', error);
+        selectEl.innerHTML = '<option value="">Load error</option>';
+        return;
+      }
 
-  // 초기화
-  (async function init() {
-    document.getElementById('client-select').addEventListener('change', async (e) => {
-      currentClientId = e.target.value || null;
-      const found = clientsCache.find(c => c.id === currentClientId);
-      document.getElementById('client-url').textContent = found?.main_url || '';
-      await refreshAll();
-    });
+      clientsCache = data || [];
+      if (!clientsCache.length) {
+        selectEl.innerHTML = '<option value="">No clients</option>';
+        return;
+      }
 
-    document.getElementById('period-select').addEventListener('change', async (e) => {
-      currentPeriod = e.target.value;
-      await refreshAll();
-    });
+      selectEl.innerHTML = clientsCache.map((c, idx) => `
+        <option value="${c.id}" ${idx === 0 ? 'selected' : ''}>${c.name}</option>
+      `).join('');
 
-    document.getElementById('device-select').addEventListener('change', async (e) => {
-      currentDevice = e.target.value;
-      await refreshAll();
-    });
+      currentClientId = clientsCache[0].id;
+      urlEl.textContent = clientsCache[0].main_url || '';
+    }
 
-    setLoadingState();
-    await loadClients();
-    if (currentClientId) await refreshAll();
-  })();
-</script>
+    async function refreshAll() {
+      setLoadingState();
+      await Promise.all([loadSummary(), loadDailyTable(), loadChannels()]);
+    }
+
+    (async function init() {
+      document.getElementById('client-select').addEventListener('change', async (e) => {
+        currentClientId = e.target.value || null;
+        const found = clientsCache.find(c => c.id === currentClientId);
+        document.getElementById('client-url').textContent = found?.main_url || '';
+        await refreshAll();
+      });
+
+      document.getElementById('period-select').addEventListener('change', async (e) => {
+        currentPeriod = e.target.value;
+        await refreshAll();
+      });
+
+      document.getElementById('device-select').addEventListener('change', async (e) => {
+        currentDevice = e.target.value;
+        await refreshAll();
+      });
+
+      setLoadingState();
+      await loadClients();
+      if (currentClientId) await refreshAll();
+    })();
+  </script>
+
+  <!-- 여기부터는 실제 페이지뷰 수집용 스크립트 -->
+  <script>
+    (function () {
+      const SUPABASE_URL = 'https://mbzowtyucumxhibgvfyr.supabase.co';
+      const SUPABASE_KEY =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iem93dHl1Y3VteGhpYmd2ZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzcxNjksImV4cCI6MjA4MDQ1MzE2OX0.iRgdfVtCiLoONsU6QCSQrXrzljiiDdI6cCYeC_IcVG4';
+      const CLIENT_ID = '42b57d1d-a7aa-44a8-80d1-c2531ee7fae6';
+
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      s.defer = true;
+      s.onload = async () => {
+        try {
+          const { createClient } = window.supabase;
+          const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+          const ua = navigator.userAgent || '';
+          const device =
+            /Tablet|iPad/i.test(ua) ? 'tablet' :
+            /Mobi|Android/i.test(ua) ? 'mobile' :
+            'desktop';
+
+          await sb.from('pageviews').insert({
+            client_id: CLIENT_ID,
+            url: window.location.href,
+            referrer: document.referrer || null,
+            device
+          });
+        } catch (e) {
+          console.error('pageview track error', e);
+        }
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
 </body>
 </html>
